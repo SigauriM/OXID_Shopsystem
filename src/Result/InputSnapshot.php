@@ -14,6 +14,7 @@ final readonly class InputSnapshot
     public function __construct(
         public array $lines,
         public string $postalCode,
+        /** Normalised ISO 3166-1 alpha-2 (QuoteEngine only builds a snapshot after validation). */
         public string $country,
         public bool $indoor,
     ) {

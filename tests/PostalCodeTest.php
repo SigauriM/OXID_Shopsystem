@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine\Tests;
 
+use OxidShipping\Engine\Domain\VolumetricDivisor;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Input\QuoteRequest;
 use OxidShipping\Engine\Input\TariffConfig;
 use OxidShipping\Engine\QuoteEngine;
 use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\Result\ValidationFailed;
+use OxidShipping\Engine\Validation\ValidationErrorCode;
 use PHPUnit\Framework\TestCase;
 
 final class PostalCodeTest extends TestCase
@@ -22,7 +24,7 @@ final class PostalCodeTest extends TestCase
             postalCode: '01067',
             country: 'DE',
             indoor: false,
-            config: new TariffConfig('test-2026'),
+            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
         ));
 
         $this->assertInstanceOf(Quote::class, $result);
@@ -37,7 +39,7 @@ final class PostalCodeTest extends TestCase
             postalCode: '  01067  ',
             country: 'DE',
             indoor: false,
-            config: new TariffConfig('test-2026'),
+            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
         ));
 
         $this->assertInstanceOf(Quote::class, $result);
@@ -52,7 +54,7 @@ final class PostalCodeTest extends TestCase
             postalCode: '1010',
             country: 'AT',
             indoor: false,
-            config: new TariffConfig('test-2026'),
+            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
         ));
 
         $this->assertInstanceOf(Quote::class, $result);
@@ -67,10 +69,10 @@ final class PostalCodeTest extends TestCase
             postalCode: '01067<script>',
             country: 'DE',
             indoor: false,
-            config: new TariffConfig('test-2026'),
+            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
         ));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertSame('postal_code_invalid', $result->errors[0]->code);
+        $this->assertSame(ValidationErrorCode::PostalCodeInvalid, $result->errors[0]->code);
     }
 }

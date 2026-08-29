@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine;
 
-enum ShippingClass
+enum ShippingClass: string
 {
-    case Paket;
-    case Sperrgut;
-    case Spedition;
+    case Paket = 'paket';
+    case Sperrgut = 'sperrgut';
+    case Spedition = 'spedition';
 
     public function rank(): int
     {

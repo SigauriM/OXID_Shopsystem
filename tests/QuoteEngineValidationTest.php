@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine\Tests;
 
+use OxidShipping\Engine\Domain\VolumetricDivisor;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Input\QuoteRequest;
 use OxidShipping\Engine\Input\TariffConfig;
 use OxidShipping\Engine\QuoteEngine;
 use OxidShipping\Engine\Result\Quote;
+use OxidShipping\Engine\Result\QuoteResult;
 use OxidShipping\Engine\Result\ValidationFailed;
 use OxidShipping\Engine\Validation\InputLimits;
 use OxidShipping\Engine\Validation\ValidationError;
+use OxidShipping\Engine\Validation\ValidationErrorCode;
 use PHPUnit\Framework\TestCase;
 
 final class QuoteEngineValidationTest extends TestCase
@@ -28,10 +31,10 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->engine->quote($this->request(lines: []));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('cart_empty', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::CartEmpty, $this->codes($result));
         foreach ($result->errors as $error) {
             $this->assertDoesNotMatchRegularExpression('/zone|region|unknown/i', $error->field);
-            $this->assertDoesNotMatchRegularExpression('/zone|region|unknown/i', $error->code);
+            $this->assertDoesNotMatchRegularExpression('/zone|region|unknown/i', $error->code->value);
         }
     }
 
@@ -40,7 +43,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(weightGrams: 0);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('weight_not_positive', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::WeightNotPositive, $this->codes($result));
     }
 
     public function testWeightNegativeIsValidationFailed(): void
@@ -48,7 +51,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(weightGrams: -1);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('weight_not_positive', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::WeightNotPositive, $this->codes($result));
     }
 
     public function testZeroDimensionIsValidationFailed(): void
@@ -56,7 +59,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(heightMm: 0);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('dimension_not_positive', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::DimensionNotPositive, $this->codes($result));
     }
 
     public function testNegativeDimensionIsValidationFailed(): void
@@ -64,7 +67,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(widthMm: -5);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('dimension_not_positive', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::DimensionNotPositive, $this->codes($result));
     }
 
     public function testLongestSide15000MillimetresIsAccepted(): void
@@ -86,7 +89,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(lengthMm: 10, widthMm: 10, heightMm: 15001);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('dimension_too_long', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::DimensionTooLong, $this->codes($result));
     }
 
     public function testWeightOneMillionGramsIsAccepted(): void
@@ -101,7 +104,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(weightGrams: 1_000_001);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('weight_too_heavy', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::WeightTooHeavy, $this->codes($result));
     }
 
     public function testWeightIsNotMultipliedByQuantity(): void
@@ -116,7 +119,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(quantity: 0);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('quantity_too_small', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::QuantityTooSmall, $this->codes($result));
     }
 
     public function testQuantityNegativeIsValidationFailed(): void
@@ -124,7 +127,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(quantity: -1);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('quantity_too_small', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::QuantityTooSmall, $this->codes($result));
     }
 
     public function testQuantityAtMaxIsAccepted(): void
@@ -139,20 +142,35 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->quoteLine(quantity: InputLimits::MAX_QUANTITY + 1);
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('quantity_too_large', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::QuantityTooLarge, $this->codes($result));
     }
 
-    public function testTooManyLinesIsValidationFailed(): void
+    public function testTooManyLinesEmitsCartErrorThenValidatesFirstHundred(): void
     {
         $lines = [];
         for ($i = 0; $i < InputLimits::MAX_LINES + 1; $i++) {
-            $lines[] = new OrderLine('line-' . $i, 100, 100, 100, 1, 1);
+            $weightGrams = ($i === 0 || $i === InputLimits::MAX_LINES) ? 0 : 1;
+            $lines[] = new OrderLine('line-' . $i, 100, 100, 100, $weightGrams, 1);
         }
 
         $result = $this->engine->quote($this->request(lines: $lines));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('cart_too_many_lines', $this->codes($result));
+        $this->assertSame(ValidationErrorCode::CartTooManyLines, $result->errors[0]->code);
+        $this->assertSame('lines', $result->errors[0]->field);
+
+        $fields = array_map(
+            static fn (ValidationError $error): string => $error->field,
+            $result->errors,
+        );
+        $this->assertContains('lines.0.weightGrams', $fields);
+        $this->assertNotContains('lines.' . InputLimits::MAX_LINES . '.weightGrams', $fields);
+
+        foreach ($fields as $field) {
+            if (preg_match('/^lines\.(\d+)/', $field, $matches) === 1) {
+                $this->assertLessThan(InputLimits::MAX_LINES, (int) $matches[1]);
+            }
+        }
     }
 
     public function testEmptyPostalCodeIsValidationFailed(): void
@@ -160,7 +178,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->engine->quote($this->request(postalCode: ''));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('postal_code_empty', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::PostalCodeEmpty, $this->codes($result));
     }
 
     public function testWhitespacePostalCodeIsValidationFailedNotRegionReject(): void
@@ -168,9 +186,9 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->engine->quote($this->request(postalCode: '   '));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('postal_code_empty', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::PostalCodeEmpty, $this->codes($result));
         foreach ($result->errors as $error) {
-            $this->assertDoesNotMatchRegularExpression('/zone|region|unknown/i', $error->code);
+            $this->assertDoesNotMatchRegularExpression('/zone|region|unknown/i', $error->code->value);
         }
     }
 
@@ -179,7 +197,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->engine->quote($this->request(country: ''));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('country_empty', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::CountryEmpty, $this->codes($result));
     }
 
     public function testSingleLetterCountryIsValidationFailed(): void
@@ -187,7 +205,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->engine->quote($this->request(country: 'D'));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('country_invalid', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::CountryInvalid, $this->codes($result));
     }
 
     public function testCountryWordIsValidationFailed(): void
@@ -195,7 +213,18 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->engine->quote($this->request(country: 'GERMANY'));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('country_invalid', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::CountryInvalid, $this->codes($result));
+    }
+
+    public function testAlpha3CountryIsValidationFailedNotRegionReject(): void
+    {
+        $result = $this->engine->quote($this->request(country: 'DEU'));
+
+        $this->assertInstanceOf(ValidationFailed::class, $result);
+        $this->assertContains(ValidationErrorCode::CountryInvalid, $this->codes($result));
+        foreach ($result->errors as $error) {
+            $this->assertDoesNotMatchRegularExpression('/zone|region|unknown/i', $error->code->value);
+        }
     }
 
     public function testSwitzerlandPassesValidationOnThisStep(): void
@@ -211,7 +240,7 @@ final class QuoteEngineValidationTest extends TestCase
         $result = $this->engine->quote($this->request(country: 'DE1'));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
-        $this->assertContains('country_invalid', $this->codes($result));
+        $this->assertContains(ValidationErrorCode::CountryInvalid, $this->codes($result));
     }
 
     public function testCountryIsNormalisedToUppercase(): void
@@ -228,8 +257,8 @@ final class QuoteEngineValidationTest extends TestCase
 
         $this->assertInstanceOf(ValidationFailed::class, $result);
         $codes = $this->codes($result);
-        $this->assertContains('dimension_not_positive', $codes);
-        $this->assertContains('weight_not_positive', $codes);
+        $this->assertContains(ValidationErrorCode::DimensionNotPositive, $codes);
+        $this->assertContains(ValidationErrorCode::WeightNotPositive, $codes);
     }
 
     /**
@@ -256,7 +285,7 @@ final class QuoteEngineValidationTest extends TestCase
             postalCode: $postalCode,
             country: $country,
             indoor: false,
-            config: new TariffConfig('test-2026'),
+            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
         );
     }
 
@@ -266,29 +295,23 @@ final class QuoteEngineValidationTest extends TestCase
         int $heightMm = 100,
         int $weightGrams = 1,
         int $quantity = 1,
-    ): Quote|ValidationFailed {
-        $result = $this->engine->quote($this->request(
+    ): QuoteResult {
+        return $this->engine->quote($this->request(
             lengthMm: $lengthMm,
             widthMm: $widthMm,
             heightMm: $heightMm,
             weightGrams: $weightGrams,
             quantity: $quantity,
         ));
-
-        if (!$result instanceof Quote && !$result instanceof ValidationFailed) {
-            $this->fail('Quote engine must return Quote or ValidationFailed.');
-        }
-
-        return $result;
     }
 
     /**
-     * @return list<string>
+     * @return list<ValidationErrorCode>
      */
     private function codes(ValidationFailed $failed): array
     {
         return array_map(
-            static fn (ValidationError $error): string => $error->code,
+            static fn (ValidationError $error): ValidationErrorCode => $error->code,
             $failed->errors,
         );
     }

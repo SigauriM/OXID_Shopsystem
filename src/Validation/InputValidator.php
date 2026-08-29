@@ -20,29 +20,33 @@ final class InputValidator
         if ($lineCount === 0) {
             $errors[] = new ValidationError(
                 'lines',
-                'cart_empty',
+                ValidationErrorCode::CartEmpty,
                 'Cart has no lines.',
             );
-        } elseif ($lineCount > InputLimits::MAX_LINES) {
-            $errors[] = new ValidationError(
-                'lines',
-                'cart_too_many_lines',
-                'Cart must have at most ' . InputLimits::MAX_LINES . ' lines.',
-            );
         } else {
-            foreach ($request->lines as $index => $line) {
+            if ($lineCount > InputLimits::MAX_LINES) {
+                $errors[] = new ValidationError(
+                    'lines',
+                    ValidationErrorCode::CartTooManyLines,
+                    'Cart must have at most ' . InputLimits::MAX_LINES . ' lines.',
+                );
+            }
+
+            $linesToCheck = min($lineCount, InputLimits::MAX_LINES);
+            for ($index = 0; $index < $linesToCheck; $index++) {
+                $line = $request->lines[$index];
                 $prefix = 'lines.' . $index;
 
                 if ($line->quantity < 1) {
                     $errors[] = new ValidationError(
                         $prefix . '.quantity',
-                        'quantity_too_small',
+                        ValidationErrorCode::QuantityTooSmall,
                         'Quantity must be at least 1 (each unit is a separate piece).',
                     );
                 } elseif ($line->quantity > InputLimits::MAX_QUANTITY) {
                     $errors[] = new ValidationError(
                         $prefix . '.quantity',
-                        'quantity_too_large',
+                        ValidationErrorCode::QuantityTooLarge,
                         'Quantity must be at most ' . InputLimits::MAX_QUANTITY . '.',
                     );
                 }
@@ -56,7 +60,7 @@ final class InputValidator
                     if ($millimetres <= 0) {
                         $errors[] = new ValidationError(
                             $prefix . '.' . $field,
-                            'dimension_not_positive',
+                            ValidationErrorCode::DimensionNotPositive,
                             'Each dimension must be greater than 0 millimetres.',
                         );
                     }
@@ -66,7 +70,7 @@ final class InputValidator
                 if ($longest > InputLimits::MAX_SIDE_MM) {
                     $errors[] = new ValidationError(
                         $prefix . '.longestSideMm',
-                        'dimension_too_long',
+                        ValidationErrorCode::DimensionTooLong,
                         'Longest side must be at most ' . InputLimits::MAX_SIDE_MM . ' millimetres.',
                     );
                 }
@@ -74,13 +78,13 @@ final class InputValidator
                 if ($line->weightGrams <= 0) {
                     $errors[] = new ValidationError(
                         $prefix . '.weightGrams',
-                        'weight_not_positive',
+                        ValidationErrorCode::WeightNotPositive,
                         'Piece weight must be greater than 0 grams.',
                     );
                 } elseif ($line->weightGrams > InputLimits::MAX_WEIGHT_G) {
                     $errors[] = new ValidationError(
                         $prefix . '.weightGrams',
-                        'weight_too_heavy',
+                        ValidationErrorCode::WeightTooHeavy,
                         'Piece weight must be at most ' . InputLimits::MAX_WEIGHT_G . ' grams.',
                     );
                 }
@@ -91,13 +95,13 @@ final class InputValidator
         if ($postalCode === '') {
             $errors[] = new ValidationError(
                 'postalCode',
-                'postal_code_empty',
+                ValidationErrorCode::PostalCodeEmpty,
                 'Postal code is empty.',
             );
         } elseif (preg_match(InputLimits::POSTAL_CODE_PATTERN, $postalCode) !== 1) {
             $errors[] = new ValidationError(
                 'postalCode',
-                'postal_code_invalid',
+                ValidationErrorCode::PostalCodeInvalid,
                 'Postal code must be 2 to 10 letters, digits, spaces or hyphens.',
             );
         }
@@ -106,13 +110,13 @@ final class InputValidator
         if ($country === '') {
             $errors[] = new ValidationError(
                 'country',
-                'country_empty',
+                ValidationErrorCode::CountryEmpty,
                 'Country is empty.',
             );
         } elseif (preg_match(InputLimits::COUNTRY_PATTERN, $country) !== 1) {
             $errors[] = new ValidationError(
                 'country',
-                'country_invalid',
+                ValidationErrorCode::CountryInvalid,
                 'Country must be a 2-letter ISO-like code.',
             );
         }

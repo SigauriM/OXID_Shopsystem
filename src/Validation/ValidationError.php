@@ -8,7 +8,7 @@ final readonly class ValidationError
 {
     public function __construct(
         public string $field,
-        public string $code,
+        public ValidationErrorCode $code,
         public string $message,
     ) {
     }
