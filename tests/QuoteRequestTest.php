@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine\Tests;
 
-use OxidShipping\Engine\Domain\VolumetricDivisor;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Input\QuoteRequest;
-use OxidShipping\Engine\Input\TariffConfig;
+use OxidShipping\Engine\Tests\Support\TestConfig;
 use PHPUnit\Framework\TestCase;
 
 final class QuoteRequestTest extends TestCase
@@ -22,7 +21,7 @@ final class QuoteRequestTest extends TestCase
                 postalCode: '01067',
                 country: 'DE',
                 indoor: false,
-                config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
+                config: TestConfig::tariff(),
             );
             $this->fail('Expected InvalidArgumentException, got ' . count($request->lines) . ' lines.');
         } catch (\InvalidArgumentException $exception) {
@@ -38,7 +37,7 @@ final class QuoteRequestTest extends TestCase
                 postalCode: '01067',
                 country: 'DE',
                 indoor: false,
-                config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
+                config: TestConfig::tariff(),
             );
             $this->fail('Expected InvalidArgumentException, got ' . count($request->lines) . ' lines.');
         } catch (\InvalidArgumentException $exception) {

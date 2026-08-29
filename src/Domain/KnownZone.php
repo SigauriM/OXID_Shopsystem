@@ -8,5 +8,6 @@ final readonly class KnownZone implements ZoneLookup
 {
     public function __construct(public string $zoneId)
     {
+        ZoneId::assert($zoneId);
     }
 }

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine\Tests;
 
-use OxidShipping\Engine\Domain\VolumetricDivisor;
+use OxidShipping\Engine\Domain\Rejected;
+use OxidShipping\Engine\Domain\RejectReason;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Input\QuoteRequest;
-use OxidShipping\Engine\Input\TariffConfig;
 use OxidShipping\Engine\QuoteEngine;
+use OxidShipping\Engine\Tests\Support\TestConfig;
 use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\Result\QuoteResult;
 use OxidShipping\Engine\Result\ValidationFailed;
@@ -233,6 +234,8 @@ final class QuoteEngineValidationTest extends TestCase
 
         $this->assertInstanceOf(Quote::class, $result);
         $this->assertSame('CH', $result->snapshot->country);
+        $this->assertInstanceOf(Rejected::class, $result->destination);
+        $this->assertSame(RejectReason::CountryNotServed, $result->destination->reason);
     }
 
     public function testGarbageCountryIsValidationFailed(): void
@@ -285,7 +288,7 @@ final class QuoteEngineValidationTest extends TestCase
             postalCode: $postalCode,
             country: $country,
             indoor: false,
-            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
+            config: TestConfig::tariff(),
         );
     }
 

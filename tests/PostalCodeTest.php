@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine\Tests;
 
-use OxidShipping\Engine\Domain\VolumetricDivisor;
+use OxidShipping\Engine\Domain\KnownZone;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Input\QuoteRequest;
-use OxidShipping\Engine\Input\TariffConfig;
 use OxidShipping\Engine\QuoteEngine;
 use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\Result\ValidationFailed;
+use OxidShipping\Engine\Tests\Support\TestConfig;
 use OxidShipping\Engine\Validation\ValidationErrorCode;
 use PHPUnit\Framework\TestCase;
 
@@ -24,7 +24,7 @@ final class PostalCodeTest extends TestCase
             postalCode: '01067',
             country: 'DE',
             indoor: false,
-            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
+            config: TestConfig::tariff(),
         ));
 
         $this->assertInstanceOf(Quote::class, $result);
@@ -39,11 +39,13 @@ final class PostalCodeTest extends TestCase
             postalCode: '  01067  ',
             country: 'DE',
             indoor: false,
-            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
+            config: TestConfig::tariff(),
         ));
 
         $this->assertInstanceOf(Quote::class, $result);
         $this->assertSame('01067', $result->snapshot->postalCode);
+        $this->assertInstanceOf(KnownZone::class, $result->destination);
+        $this->assertSame('de-01', $result->destination->zoneId);
     }
 
     public function testAustrianFourDigitPostalCodePassesShapeCheck(): void
@@ -54,7 +56,7 @@ final class PostalCodeTest extends TestCase
             postalCode: '1010',
             country: 'AT',
             indoor: false,
-            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
+            config: TestConfig::tariff(),
         ));
 
         $this->assertInstanceOf(Quote::class, $result);
@@ -69,7 +71,7 @@ final class PostalCodeTest extends TestCase
             postalCode: '01067<script>',
             country: 'DE',
             indoor: false,
-            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
+            config: TestConfig::tariff(),
         ));
 
         $this->assertInstanceOf(ValidationFailed::class, $result);

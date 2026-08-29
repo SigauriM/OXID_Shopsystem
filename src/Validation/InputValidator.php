@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine\Validation;
 
-use OxidShipping\Engine\Input\InputNormalizer;
+use OxidShipping\Engine\Domain\AddressShape;
 use OxidShipping\Engine\Input\QuoteRequest;
 
 final class InputValidator
@@ -91,14 +91,14 @@ final class InputValidator
             }
         }
 
-        $postalCode = InputNormalizer::postalCode($request->postalCode);
+        $postalCode = AddressShape::postalCode($request->postalCode);
         if ($postalCode === '') {
             $errors[] = new ValidationError(
                 'postalCode',
                 ValidationErrorCode::PostalCodeEmpty,
                 'Postal code is empty.',
             );
-        } elseif (preg_match(InputLimits::POSTAL_CODE_PATTERN, $postalCode) !== 1) {
+        } elseif (preg_match(AddressShape::POSTAL_CODE_PATTERN, $postalCode) !== 1) {
             $errors[] = new ValidationError(
                 'postalCode',
                 ValidationErrorCode::PostalCodeInvalid,
@@ -106,14 +106,14 @@ final class InputValidator
             );
         }
 
-        $country = InputNormalizer::country($request->country);
+        $country = AddressShape::country($request->country);
         if ($country === '') {
             $errors[] = new ValidationError(
                 'country',
                 ValidationErrorCode::CountryEmpty,
                 'Country is empty.',
             );
-        } elseif (preg_match(InputLimits::COUNTRY_PATTERN, $country) !== 1) {
+        } elseif (preg_match(AddressShape::COUNTRY_PATTERN, $country) !== 1) {
             $errors[] = new ValidationError(
                 'country',
                 ValidationErrorCode::CountryInvalid,

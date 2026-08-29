@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine\Tests;
 
-use OxidShipping\Engine\Domain\VolumetricDivisor;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Input\QuoteRequest;
-use OxidShipping\Engine\Input\TariffConfig;
 use OxidShipping\Engine\QuoteEngine;
+use OxidShipping\Engine\Tests\Support\TestConfig;
 use OxidShipping\Engine\Result\Quote;
 use PHPUnit\Framework\TestCase;
 
@@ -60,7 +59,7 @@ final class QuoteEngineMeasurementTest extends TestCase
             postalCode: '01067',
             country: 'DE',
             indoor: false,
-            config: new TariffConfig('test-2026', VolumetricDivisor::fromDimFactorCmKg(5000)),
+            config: TestConfig::tariff(),
         ));
 
         $this->assertInstanceOf(Quote::class, $result);
