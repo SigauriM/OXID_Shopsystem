@@ -49,6 +49,7 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertInstanceOf(Rejected::class, $result->destination);
         $this->assertSame(RejectReason::UnknownZone, $result->destination->reason);
         $this->assertSame([], $result->classified);
+        $this->assertSame([], $result->shipments);
     }
 
     public function testSwitzerlandWithUnknownPostalIsCountryNotServedNotValidationFailed(): void
@@ -58,6 +59,7 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertInstanceOf(Rejected::class, $result->destination);
         $this->assertSame(RejectReason::CountryNotServed, $result->destination->reason);
         $this->assertSame([], $result->classified);
+        $this->assertSame([], $result->shipments);
     }
 
     public function testForbiddenGermanPostalIsZoneForbidden(): void
@@ -67,6 +69,7 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertInstanceOf(Rejected::class, $result->destination);
         $this->assertSame(RejectReason::ZoneForbidden, $result->destination->reason);
         $this->assertSame([], $result->classified);
+        $this->assertSame([], $result->shipments);
     }
 
     public function testGermanFourDigitPostalMatchingViennaIsUnknownZone(): void
@@ -76,6 +79,7 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertInstanceOf(Rejected::class, $result->destination);
         $this->assertSame(RejectReason::UnknownZone, $result->destination->reason);
         $this->assertSame([], $result->classified);
+        $this->assertSame([], $result->shipments);
     }
 
     public function testShortGermanPostalOnRequestIsUnknownZone(): void
@@ -85,6 +89,7 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertInstanceOf(Rejected::class, $result->destination);
         $this->assertSame(RejectReason::UnknownZone, $result->destination->reason);
         $this->assertSame([], $result->classified);
+        $this->assertSame([], $result->shipments);
     }
 
     public function testAddressRejectExpandsToEveryPiece(): void
@@ -103,6 +108,7 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertInstanceOf(Quote::class, $result);
         $this->assertCount(4, $result->rejections);
         $this->assertSame([], $result->classified);
+        $this->assertSame([], $result->shipments);
         $this->assertSame(
             [[0, 0], [0, 1], [1, 0], [1, 1]],
             array_map(
@@ -128,6 +134,7 @@ final class QuoteEngineZoneTest extends TestCase
                 ),
             ),
             TestConfig::classification(),
+            TestConfig::orderWeightThreshold(),
         );
 
         $result = $this->engine->quote(new QuoteRequest(
@@ -142,6 +149,7 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertInstanceOf(Rejected::class, $result->destination);
         $this->assertSame(RejectReason::UnknownZone, $result->destination->reason);
         $this->assertSame([], $result->classified);
+        $this->assertSame([], $result->shipments);
     }
 
     private function quote(string $postalCode, string $country): Quote

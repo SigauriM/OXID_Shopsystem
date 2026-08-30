@@ -7,6 +7,7 @@ namespace OxidShipping\Engine\Result;
 use OxidShipping\Engine\Classification\ClassifiedPiece;
 use OxidShipping\Engine\Domain\KnownZone;
 use OxidShipping\Engine\Domain\Rejected;
+use OxidShipping\Engine\Grouping\Shipment;
 use OxidShipping\Engine\Measurement\MeasuredPiece;
 
 final readonly class Quote implements QuoteResult
@@ -15,12 +16,14 @@ final readonly class Quote implements QuoteResult
      * @param list<MeasuredPiece> $pieces
      * @param list<PieceRejection> $rejections
      * @param list<ClassifiedPiece> $classified
+     * @param list<Shipment> $shipments
      */
     public static function fromPipeline(
         array $pieces,
         KnownZone|Rejected $destination,
         array $rejections,
         array $classified,
+        array $shipments,
         InputSnapshot $snapshot,
         string $configVersion,
     ): self {
@@ -96,11 +99,57 @@ final readonly class Quote implements QuoteResult
             }
         }
 
-        $sortedPieces = $pieces;
-        usort(
-            $sortedPieces,
-            static fn (MeasuredPiece $a, MeasuredPiece $b): int => [$a->lineIndex, $a->pieceIndex] <=> [$b->lineIndex, $b->pieceIndex],
-        );
+        if ($destination instanceof Rejected && $shipments !== []) {
+            throw new \InvalidArgumentException(
+                'Rejected destination must not include shipments.',
+            );
+        }
+
+        if ($destination instanceof KnownZone) {
+            $classifiedByCoordinate = [];
+            foreach ($classified as $item) {
+                $classifiedByCoordinate[$item->piece->lineIndex . "\0" . $item->piece->pieceIndex] = $item;
+            }
+
+            $assigned = [];
+            $shipmentKeys = [];
+            foreach ($shipments as $shipment) {
+                $shipmentKey = $shipment->class->value . "\0" . $shipment->zoneId . "\0" . ($shipment->indoor ? '1' : '0');
+                if (isset($shipmentKeys[$shipmentKey])) {
+                    throw new \InvalidArgumentException('Duplicate shipment key.');
+                }
+                $shipmentKeys[$shipmentKey] = true;
+
+                foreach ($shipment->pieces as $item) {
+                    $key = $item->piece->lineIndex . "\0" . $item->piece->pieceIndex;
+                    $classifiedItem = $classifiedByCoordinate[$key] ?? null;
+                    if ($classifiedItem === null) {
+                        throw new \InvalidArgumentException(
+                            'Shipment piece does not refer to a classified piece.',
+                        );
+                    }
+                    if ($classifiedItem->piece->lineId !== $item->piece->lineId) {
+                        throw new \InvalidArgumentException(
+                            'Shipment piece lineId does not match the classified piece.',
+                        );
+                    }
+                    if (isset($assigned[$key])) {
+                        throw new \InvalidArgumentException(
+                            'Classified piece belongs to more than one shipment.',
+                        );
+                    }
+                    $assigned[$key] = true;
+                }
+            }
+
+            foreach (array_keys($classifiedByCoordinate) as $key) {
+                if (!isset($assigned[$key])) {
+                    throw new \InvalidArgumentException(
+                        'Known destination requires every classified piece in a shipment.',
+                    );
+                }
+            }
+        }
 
         $sortedRejections = $rejections;
         usort(
@@ -115,27 +164,36 @@ final readonly class Quote implements QuoteResult
                 <=> [$b->piece->lineIndex, $b->piece->pieceIndex],
         );
 
+        $sortedShipments = $shipments;
+        usort(
+            $sortedShipments,
+            static fn (Shipment $a, Shipment $b): int => [$a->class->rank(), $a->zoneId, $a->indoor]
+                <=> [$b->class->rank(), $b->zoneId, $b->indoor],
+        );
+
         return new self(
-            $sortedPieces,
             $destination,
             $sortedRejections,
             $sortedClassified,
+            $sortedShipments,
             $snapshot,
             $configVersion,
         );
     }
 
     /**
-     * @param list<MeasuredPiece> $pieces
      * @param list<PieceRejection> $rejections
      * @param list<ClassifiedPiece> $classified
+     * @param list<Shipment> $shipments
      */
     private function __construct(
-        public array $pieces,
         /** Request-level address decision, not a piece outcome. */
         public KnownZone|Rejected $destination,
         public array $rejections,
+        /** Class after the order-weight rule, not after piece classification alone. */
         public array $classified,
+        /** One shipment = one stop. Key is (class, zoneId, indoor). */
+        public array $shipments,
         public InputSnapshot $snapshot,
         public string $configVersion,
     ) {

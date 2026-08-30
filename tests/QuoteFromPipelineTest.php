@@ -9,6 +9,7 @@ use OxidShipping\Engine\Domain\KnownZone;
 use OxidShipping\Engine\Domain\Rejected;
 use OxidShipping\Engine\Domain\RejectReason;
 use OxidShipping\Engine\Domain\VolumetricDivisor;
+use OxidShipping\Engine\Grouping\Shipment;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Measurement\Dimensions;
 use OxidShipping\Engine\Measurement\MeasuredPiece;
@@ -36,6 +37,7 @@ final class QuoteFromPipelineTest extends TestCase
             new Rejected(RejectReason::UnknownZone),
             [],
             [],
+            [],
             new InputSnapshot([$line], '99999', 'DE', false),
             'test-2026',
         );
@@ -56,6 +58,7 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [new PieceRejection('line-1', 0, 1, new Rejected(RejectReason::UnknownZone))],
             [],
+            [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
         );
@@ -74,6 +77,7 @@ final class QuoteFromPipelineTest extends TestCase
         Quote::fromPipeline(
             [$piece, $piece],
             new KnownZone('de-01'),
+            [],
             [],
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
@@ -100,6 +104,7 @@ final class QuoteFromPipelineTest extends TestCase
                 new PieceRejection('line-1', 0, 0, $rejected),
             ],
             [],
+            [],
             new InputSnapshot([$line], '99999', 'DE', false),
             'test-2026',
         );
@@ -119,6 +124,7 @@ final class QuoteFromPipelineTest extends TestCase
             $pieces,
             new KnownZone('de-01'),
             [new PieceRejection('other-line', 0, 0, new Rejected(RejectReason::UnknownZone))],
+            [],
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
@@ -145,17 +151,13 @@ final class QuoteFromPipelineTest extends TestCase
                 new PieceRejection('line-a', 0, 0, $rejected),
             ],
             [],
+            [],
             new InputSnapshot($lines, '99999', 'DE', false),
             'test-2026',
         );
 
-        $this->assertSame(
-            [[0, 0], [1, 0]],
-            array_map(
-                static fn ($piece): array => [$piece->lineIndex, $piece->pieceIndex],
-                $quote->pieces,
-            ),
-        );
+        $this->assertSame([], $quote->classified);
+        $this->assertSame([], $quote->shipments);
         $this->assertSame(
             [[0, 0], [1, 0]],
             array_map(
@@ -180,6 +182,7 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             [],
+            [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
         );
@@ -201,6 +204,7 @@ final class QuoteFromPipelineTest extends TestCase
             $rejected,
             [new PieceRejection('line-1', 0, 0, $rejected)],
             [new ClassifiedPiece($pieces[0], ShippingClass::Paket)],
+            [],
             new InputSnapshot([$line], '99999', 'DE', false),
             'test-2026',
         );
@@ -222,6 +226,7 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             [$classified, $classified],
+            [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
         );
@@ -248,6 +253,7 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             [new ClassifiedPiece($stray, ShippingClass::Paket)],
+            [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
         );
@@ -274,8 +280,252 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             [new ClassifiedPiece($mismatched, ShippingClass::Paket)],
+            [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
         );
+    }
+
+    public function testKnownDestinationWithClassifiedPiecesAndNoShipmentsIsProgrammerError(): void
+    {
+        $line = new OrderLine('line-1', 100, 100, 100, 1, 1);
+        $pieces = (new PieceFactory())->expand(
+            [$line],
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $classified = [new ClassifiedPiece($pieces[0], ShippingClass::Paket)];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Known destination requires every classified piece in a shipment.');
+        Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            [],
+            new InputSnapshot([$line], '01067', 'DE', false),
+            'test-2026',
+        );
+    }
+
+    public function testShipmentCoordinateNotInClassifiedIsProgrammerError(): void
+    {
+        $line = new OrderLine('line-1', 100, 100, 100, 1, 1);
+        $divisor = VolumetricDivisor::fromDimFactorCmKg(5000);
+        $pieces = (new PieceFactory())->expand([$line], $divisor);
+        $classified = [new ClassifiedPiece($pieces[0], ShippingClass::Paket)];
+        $stray = MeasuredPiece::from(
+            'line-1',
+            0,
+            1,
+            Dimensions::canonical(100, 100, 100),
+            1,
+            $divisor,
+        );
+        $shipments = [
+            new Shipment(ShippingClass::Paket, 'de-01', false, [
+                new ClassifiedPiece($stray, ShippingClass::Paket),
+            ]),
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Shipment piece does not refer to a classified piece.');
+        Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            $shipments,
+            new InputSnapshot([$line], '01067', 'DE', false),
+            'test-2026',
+        );
+    }
+
+    public function testClassifiedPieceMissingFromEveryShipmentIsProgrammerError(): void
+    {
+        $lines = [
+            new OrderLine('line-a', 100, 100, 100, 1, 1),
+            new OrderLine('line-b', 100, 100, 100, 1, 1),
+        ];
+        $pieces = (new PieceFactory())->expand(
+            $lines,
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $classified = [
+            new ClassifiedPiece($pieces[0], ShippingClass::Paket),
+            new ClassifiedPiece($pieces[1], ShippingClass::Paket),
+        ];
+        $shipments = [
+            new Shipment(ShippingClass::Paket, 'de-01', false, [$classified[0]]),
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Known destination requires every classified piece in a shipment.');
+        Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            $shipments,
+            new InputSnapshot($lines, '01067', 'DE', false),
+            'test-2026',
+        );
+    }
+
+    public function testClassifiedPieceInTwoShipmentsWithDifferentKeysIsProgrammerError(): void
+    {
+        $line = new OrderLine('line-1', 100, 100, 100, 1, 1);
+        $pieces = (new PieceFactory())->expand(
+            [$line],
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $classified = [new ClassifiedPiece($pieces[0], ShippingClass::Paket)];
+        $shipments = [
+            new Shipment(ShippingClass::Paket, 'de-01', false, $classified),
+            new Shipment(ShippingClass::Paket, 'de-hh', false, $classified),
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Classified piece belongs to more than one shipment.');
+        Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            $shipments,
+            new InputSnapshot([$line], '01067', 'DE', false),
+            'test-2026',
+        );
+    }
+
+    public function testDuplicateShipmentKeyIsProgrammerError(): void
+    {
+        $lines = [
+            new OrderLine('line-a', 100, 100, 100, 1, 1),
+            new OrderLine('line-b', 100, 100, 100, 1, 1),
+        ];
+        $pieces = (new PieceFactory())->expand(
+            $lines,
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $classified = [
+            new ClassifiedPiece($pieces[0], ShippingClass::Paket),
+            new ClassifiedPiece($pieces[1], ShippingClass::Paket),
+        ];
+        $shipments = [
+            new Shipment(ShippingClass::Paket, 'de-01', false, [$classified[0]]),
+            new Shipment(ShippingClass::Paket, 'de-01', false, [$classified[1]]),
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Duplicate shipment key.');
+        Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            $shipments,
+            new InputSnapshot($lines, '01067', 'DE', false),
+            'test-2026',
+        );
+    }
+
+    public function testRejectedDestinationWithShipmentsIsProgrammerError(): void
+    {
+        $line = new OrderLine('line-1', 100, 100, 100, 1, 1);
+        $pieces = (new PieceFactory())->expand(
+            [$line],
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $rejected = new Rejected(RejectReason::UnknownZone);
+        $shipments = [
+            new Shipment(
+                ShippingClass::Paket,
+                'de-01',
+                false,
+                [new ClassifiedPiece($pieces[0], ShippingClass::Paket)],
+            ),
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Rejected destination must not include shipments.');
+        Quote::fromPipeline(
+            $pieces,
+            $rejected,
+            [new PieceRejection('line-1', 0, 0, $rejected)],
+            [],
+            $shipments,
+            new InputSnapshot([$line], '99999', 'DE', false),
+            'test-2026',
+        );
+    }
+
+    public function testFromPipelineSortsSpeditionThenSperrgutToRankOrder(): void
+    {
+        $lines = [
+            new OrderLine('spedition', 100, 100, 100, 1, 1),
+            new OrderLine('sperrgut', 100, 100, 100, 1, 1),
+        ];
+        $pieces = (new PieceFactory())->expand(
+            $lines,
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $classified = [
+            new ClassifiedPiece($pieces[0], ShippingClass::Spedition),
+            new ClassifiedPiece($pieces[1], ShippingClass::Sperrgut),
+        ];
+        $shipments = [
+            new Shipment(ShippingClass::Spedition, 'de-01', false, [$classified[0]]),
+            new Shipment(ShippingClass::Sperrgut, 'de-01', false, [$classified[1]]),
+        ];
+
+        $quote = Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            $shipments,
+            new InputSnapshot($lines, '01067', 'DE', false),
+            'test-2026',
+        );
+
+        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[0]->class);
+        $this->assertSame(ShippingClass::Spedition, $quote->shipments[1]->class);
+    }
+
+    public function testMixedShipmentZonesAssembleWhenDestinationIsDe01(): void
+    {
+        $lines = [
+            new OrderLine('dresden', 100, 100, 100, 1, 1),
+            new OrderLine('hamburg', 100, 100, 100, 1, 1),
+        ];
+        $pieces = (new PieceFactory())->expand(
+            $lines,
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $classified = [
+            new ClassifiedPiece($pieces[0], ShippingClass::Paket),
+            new ClassifiedPiece($pieces[1], ShippingClass::Paket),
+        ];
+        $shipments = [
+            new Shipment(ShippingClass::Paket, 'de-01', false, [$classified[0]]),
+            new Shipment(ShippingClass::Paket, 'de-hh', false, [$classified[1]]),
+        ];
+
+        $quote = Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            $shipments,
+            new InputSnapshot($lines, '01067', 'DE', false),
+            'test-2026',
+        );
+
+        $this->assertInstanceOf(KnownZone::class, $quote->destination);
+        $this->assertCount(2, $quote->shipments);
+        $this->assertSame('de-01', $quote->shipments[0]->zoneId);
+        $this->assertSame('de-hh', $quote->shipments[1]->zoneId);
+        $this->assertSame('de-01', $quote->destination->zoneId);
     }
 }

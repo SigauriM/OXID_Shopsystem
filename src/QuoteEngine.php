@@ -7,8 +7,11 @@ namespace OxidShipping\Engine;
 use OxidShipping\Engine\Classification\PieceClassifier;
 use OxidShipping\Engine\Domain\AddressShape;
 use OxidShipping\Engine\Domain\Rejected;
+use OxidShipping\Engine\Grouping\GroupablePiece;
+use OxidShipping\Engine\Grouping\ShipmentGrouper;
 use OxidShipping\Engine\Input\QuoteRequest;
 use OxidShipping\Engine\Measurement\PieceFactory;
+use OxidShipping\Engine\OrderRules\OrderWeightSpeditionOverride;
 use OxidShipping\Engine\Result\InputSnapshot;
 use OxidShipping\Engine\Result\PieceRejection;
 use OxidShipping\Engine\Result\Quote;
@@ -24,6 +27,8 @@ final readonly class QuoteEngine
         private PieceFactory $pieceFactory = new PieceFactory(),
         private ZoneResolver $zoneResolver = new ZoneResolver(),
         private PieceClassifier $pieceClassifier = new PieceClassifier(),
+        private OrderWeightSpeditionOverride $orderWeightSpeditionOverride = new OrderWeightSpeditionOverride(),
+        private ShipmentGrouper $shipmentGrouper = new ShipmentGrouper(),
     ) {
         if (PHP_INT_SIZE !== 8) {
             throw new \RuntimeException('Shipping engine requires 64-bit PHP.');
@@ -64,11 +69,25 @@ final readonly class QuoteEngine
         }
 
         $classified = [];
+        $shipments = [];
         if (!$destination instanceof Rejected) {
             $classified = $this->pieceClassifier->classifyAll(
                 $pieces,
                 $request->config->classification,
             );
+            $classified = $this->orderWeightSpeditionOverride->apply(
+                $classified,
+                $request->config->orderWeightSpeditionThreshold,
+            );
+            $groupable = [];
+            foreach ($classified as $item) {
+                $groupable[] = new GroupablePiece(
+                    $item,
+                    $destination->zoneId,
+                    $request->indoor,
+                );
+            }
+            $shipments = $this->shipmentGrouper->group($groupable);
         }
 
         return Quote::fromPipeline(
@@ -76,6 +95,7 @@ final readonly class QuoteEngine
             $destination,
             $rejections,
             $classified,
+            $shipments,
             new InputSnapshot(
                 lines: $request->lines,
                 postalCode: $postalCode,

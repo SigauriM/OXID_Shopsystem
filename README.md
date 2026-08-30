@@ -1,10 +1,11 @@
 # OXID Shipping Engine — stage 1 core
 
-Framework-free PHP library that turns a cart of order lines into measured, billable pieces
-for German parcel and freight shipping. Stage 1 builds the calculation core: input
-validation, canonical dimensions, volumetric weight, billable weight, fail-closed zone
-resolution, and per-piece shipping class. Prices, shipment grouping and the OXID module
-wiring come later and are deliberately absent.
+Framework-free PHP library that turns a cart of order lines into classified pieces grouped
+into shipments for German parcel and freight shipping. Stage 1 builds the calculation core:
+input validation, canonical dimensions, volumetric weight, billable weight, fail-closed
+zone resolution, per-piece shipping class, a firm-level order-weight class raise, and
+grouping into shipments (one stop = one class, zone and indoor flag).
+Prices and the OXID module wiring come later and are deliberately absent.
 
 The engine has no I/O: no database, no HTTP, no filesystem, no globals. Everything enters
 through `QuoteRequest` and leaves through `QuoteResult`.
@@ -12,9 +13,10 @@ through `QuoteRequest` and leaves through `QuoteResult`.
 ## Status
 
 Pre-release. There is no public API stability yet: result shapes still change between steps.
-In particular `Quote::$pieces` is pipeline state on the way to shipment grouping, not a
-contract for consumers. `Quote::$classified` is the classified form of those pieces
-when the address is Known; it is empty when the address is Rejected.
+`Quote` holds `shipments` (one stop = key `(class, zoneId, indoor)` for every class,
+including Paket) and `classified` (class after the order-weight override when the address
+is Known). There is no public pipeline `pieces` list on the quote. `classified` and
+`shipments` are empty when the address is Rejected. Cents are not on this result.
 
 ## Requirements
 
@@ -61,12 +63,14 @@ rejects it before any test does.
 
 | Namespace | Responsibility | May depend on |
 |---|---|---|
-| `Domain` | Units and vocabulary: `VolumetricDivisor`, `AddressShape`, `PieceOutcome` (`Shippable`, `Rejected`), `RejectReason`, `ZoneLookup` (`KnownZone`, `UnknownZone`), `ClassificationConfig` (`ClassFloor`, `ThresholdTable`) | `ShippingClass` only |
-| `Input` | The request as received: `QuoteRequest`, `OrderLine`, `TariffConfig` (holds `ClassificationConfig`) | `Domain` |
+| `Domain` | Units and vocabulary: `VolumetricDivisor`, `AddressShape`, `PieceOutcome` (`Shippable`, `Rejected`), `RejectReason`, `ZoneLookup` (`KnownZone`, `UnknownZone`), `ClassificationConfig` (`ClassFloor`, `ThresholdTable`), `OrderWeightThreshold` | `ShippingClass` only |
+| `Input` | The request as received: `QuoteRequest`, `OrderLine`, `TariffConfig` (holds `ClassificationConfig` and `OrderWeightThreshold` as `$orderWeightSpeditionThreshold`) | `Domain` |
 | `Validation` | Shop policy — what input is accepted: `InputValidator`, `InputLimits`, `ValidationError`, `ValidationErrorCode` | `Input`, `Domain` |
 | `Measurement` | Geometry and weights: `Dimensions`, `VolumetricWeight`, `MeasuredPiece`, `PieceFactory` | `Domain`, and `Input\OrderLine` only |
 | `Classification` | Per-piece class from named threshold tables: `PieceClassifier`, three rules, `ClassifiedPiece` | `Domain`, `Measurement` |
-| `Result` | What leaves the engine: `QuoteResult`, `Quote`, `ValidationFailed`, `InputSnapshot` | `Measurement`, `Validation`, `Domain`, `Classification` |
+| `OrderRules` | Firm-level class raise after classification: `OrderWeightSpeditionOverride` | `Classification`, `Domain` |
+| `Grouping` | One stop: `GroupablePiece`, `Shipment`, `ShipmentGrouper`. Key is `(class, zoneId, indoor)` for every class, including Paket. | `Classification`, `Domain` (`ZoneId`), `ShippingClass` |
+| `Result` | What leaves the engine: `QuoteResult`, `Quote`, `ValidationFailed`, `InputSnapshot`. `Quote` holds `shipments`; there is no public `pieces`. | `Measurement`, `Validation`, `Domain`, `Classification`, `Grouping` |
 | `Zone` | Resolve a normalised address against the directory: `ZoneResolver` | `Domain` |
 | root | `QuoteEngine` (entry point), `ShippingClass` | all of the above |
 
@@ -91,9 +95,18 @@ can be exercised without constructing a whole request.
 6. If the destination is a Known allowed zone, each piece is classified against the
    tariff `ClassificationConfig`. A Rejected address skips classification:
    `classified` stays empty, so a forbidden index never receives a class.
-7. A `Quote` is returned with the pieces, the address `destination`, rejections,
+7. On that same Known path, `OrderWeightSpeditionOverride` may raise every classified
+   piece to Spedition when the sum of actual grams is at least
+   `$orderWeightSpeditionThreshold`. A Rejected address skips the override too.
+   `classified` on the quote is the class after this rule, not after piece
+   classification alone. There are no cents on this step.
+8. On that same Known path, classified pieces are mapped to `GroupablePiece` with the
+   destination `zoneId` and the request `indoor` flag, then `ShipmentGrouper` groups them
+   into shipments. A Rejected address skips grouping: `shipments` stays empty. Indoor is
+   part of the key for every class, including Paket. There are no cents on this step.
+9. A `Quote` is returned with `shipments`, the address `destination`, rejections,
    classified pieces, a normalised `InputSnapshot` and the tariff `configVersion`.
-   There are no cents on this result.
+   There is no public pipeline `pieces` list. There are no cents on this result.
 
 The order is load-bearing. `Measurement` assumes validated input, so `Dimensions::canonical()`
 and `MeasuredPiece::from()` throw `InvalidArgumentException` on impossible values instead of
@@ -149,14 +162,19 @@ must not be merged.
 
 Included: input validation, canonical dimensions, Gurtmaß (`Dimensions::girthMm()`),
 volumetric weight, billable weight, the normalised input snapshot, fail-closed zone
-resolution (exact match, no default), and per-piece shipping class (`ClassifiedPiece`)
-when the destination is Known. `TariffConfig` holds a required `ClassificationConfig`;
-there is no default table that would silently class every piece as Paket. The engine
-assigns a class only for a Known allowed zone.
+resolution (exact match, no default), per-piece shipping class (`ClassifiedPiece`)
+when the destination is Known, the order-weight Spedition override after that
+classification, and grouping into `Shipment`s on the Known path only. `TariffConfig`
+holds a required `ClassificationConfig` and a required `OrderWeightThreshold` as
+`$orderWeightSpeditionThreshold`; there is no default table that would silently class
+every piece as Paket, and no default N that would silently never raise. The engine
+assigns a class only for a Known allowed zone, raises class only after classification,
+only on Known, and groups only after that, only on Known. Indoor belongs in the
+grouping key for every class, including Paket.
 
-Not included, by decision rather than by omission: prices and totals, grouping pieces into
-shipments, surcharges, carrier APIs, persistence, HTTP and the OXID module integration.
-`Shippable` remains vocabulary for later grouping and tariff; the class on a piece is
+Not included, by decision rather than by omission: prices and totals, surcharges,
+carrier APIs, persistence, HTTP and the OXID module integration.
+`Shippable` remains vocabulary for later tariff; the class on a piece is
 `ShippingClass` on `ClassifiedPiece`. Cents are still later.
 
 ## Tests

@@ -6,6 +6,7 @@ namespace OxidShipping\Engine\Tests\Support;
 
 use OxidShipping\Engine\Domain\ClassFloor;
 use OxidShipping\Engine\Domain\ClassificationConfig;
+use OxidShipping\Engine\Domain\OrderWeightThreshold;
 use OxidShipping\Engine\Domain\PostalZoneEntry;
 use OxidShipping\Engine\Domain\ServedCountries;
 use OxidShipping\Engine\Domain\ThresholdTable;
@@ -27,7 +28,13 @@ final class TestConfig
             VolumetricDivisor::fromDimFactorCmKg($dimFactorCmKg),
             self::zones(),
             self::classification(),
+            self::orderWeightThreshold(),
         );
+    }
+
+    public static function orderWeightThreshold(): OrderWeightThreshold
+    {
+        return new OrderWeightThreshold(40000);
     }
 
     public static function classification(): ClassificationConfig

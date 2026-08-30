@@ -25,14 +25,18 @@ final class QuoteEngineMeasurementTest extends TestCase
     {
         $quote = $this->quoteLine(quantity: 3);
 
-        $this->assertCount(3, $quote->pieces);
-        $this->assertSame(0, $quote->pieces[0]->pieceIndex);
-        $this->assertSame(1, $quote->pieces[1]->pieceIndex);
-        $this->assertSame(2, $quote->pieces[2]->pieceIndex);
         $this->assertCount(3, $quote->classified);
+        $this->assertSame(0, $quote->classified[0]->piece->pieceIndex);
+        $this->assertSame(1, $quote->classified[1]->piece->pieceIndex);
+        $this->assertSame(2, $quote->classified[2]->piece->pieceIndex);
         $this->assertSame(ShippingClass::Paket, $quote->classified[0]->class);
         $this->assertSame(ShippingClass::Paket, $quote->classified[1]->class);
         $this->assertSame(ShippingClass::Paket, $quote->classified[2]->class);
+        $this->assertCount(1, $quote->shipments);
+        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->class);
+        $this->assertSame('de-01', $quote->shipments[0]->zoneId);
+        $this->assertFalse($quote->shipments[0]->indoor);
+        $this->assertCount(3, $quote->shipments[0]->pieces);
         $this->assertNotSame(
             $quote->classified[0]->piece->pieceIndex,
             $quote->classified[1]->piece->pieceIndex,
@@ -45,8 +49,8 @@ final class QuoteEngineMeasurementTest extends TestCase
 
     public function testFieldOrderDoesNotChangeMeasuredNumbersThroughTheEngine(): void
     {
-        $a = $this->quoteLine(lengthMm: 20, widthMm: 100, heightMm: 10)->pieces[0];
-        $b = $this->quoteLine(lengthMm: 100, widthMm: 20, heightMm: 10)->pieces[0];
+        $a = $this->quoteLine(lengthMm: 20, widthMm: 100, heightMm: 10)->classified[0]->piece;
+        $b = $this->quoteLine(lengthMm: 100, widthMm: 20, heightMm: 10)->classified[0]->piece;
 
         $this->assertSame($a->dimensions->lengthMm, $b->dimensions->lengthMm);
         $this->assertSame($a->dimensions->widthMm, $b->dimensions->widthMm);
