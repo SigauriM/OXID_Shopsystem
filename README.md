@@ -2,9 +2,9 @@
 
 Framework-free PHP library that turns a cart of order lines into measured, billable pieces
 for German parcel and freight shipping. Stage 1 builds the calculation core: input
-validation, canonical dimensions, volumetric weight, billable weight, and fail-closed zone
-resolution. Prices, shipment grouping and the OXID module wiring come later and are
-deliberately absent.
+validation, canonical dimensions, volumetric weight, billable weight, fail-closed zone
+resolution, and per-piece shipping class. Prices, shipment grouping and the OXID module
+wiring come later and are deliberately absent.
 
 The engine has no I/O: no database, no HTTP, no filesystem, no globals. Everything enters
 through `QuoteRequest` and leaves through `QuoteResult`.
@@ -13,7 +13,8 @@ through `QuoteRequest` and leaves through `QuoteResult`.
 
 Pre-release. There is no public API stability yet: result shapes still change between steps.
 In particular `Quote::$pieces` is pipeline state on the way to shipment grouping, not a
-contract for consumers.
+contract for consumers. `Quote::$classified` is the classified form of those pieces
+when the address is Known; it is empty when the address is Rejected.
 
 ## Requirements
 
@@ -60,11 +61,12 @@ rejects it before any test does.
 
 | Namespace | Responsibility | May depend on |
 |---|---|---|
-| `Domain` | Units and vocabulary: `VolumetricDivisor`, `AddressShape`, `PieceOutcome` (`Shippable`, `Rejected`), `RejectReason`, `ZoneLookup` (`KnownZone`, `UnknownZone`) | `ShippingClass` only |
-| `Input` | The request as received: `QuoteRequest`, `OrderLine`, `TariffConfig` | `Domain` |
+| `Domain` | Units and vocabulary: `VolumetricDivisor`, `AddressShape`, `PieceOutcome` (`Shippable`, `Rejected`), `RejectReason`, `ZoneLookup` (`KnownZone`, `UnknownZone`), `ClassificationConfig` (`ClassFloor`, `ThresholdTable`) | `ShippingClass` only |
+| `Input` | The request as received: `QuoteRequest`, `OrderLine`, `TariffConfig` (holds `ClassificationConfig`) | `Domain` |
 | `Validation` | Shop policy — what input is accepted: `InputValidator`, `InputLimits`, `ValidationError`, `ValidationErrorCode` | `Input`, `Domain` |
 | `Measurement` | Geometry and weights: `Dimensions`, `VolumetricWeight`, `MeasuredPiece`, `PieceFactory` | `Domain`, and `Input\OrderLine` only |
-| `Result` | What leaves the engine: `QuoteResult`, `Quote`, `ValidationFailed`, `InputSnapshot` | `Measurement`, `Validation`, `Domain` |
+| `Classification` | Per-piece class from named threshold tables: `PieceClassifier`, three rules, `ClassifiedPiece` | `Domain`, `Measurement` |
+| `Result` | What leaves the engine: `QuoteResult`, `Quote`, `ValidationFailed`, `InputSnapshot` | `Measurement`, `Validation`, `Domain`, `Classification` |
 | `Zone` | Resolve a normalised address against the directory: `ZoneResolver` | `Domain` |
 | root | `QuoteEngine` (entry point), `ShippingClass` | all of the above |
 
@@ -86,8 +88,12 @@ can be exercised without constructing a whole request.
    `billableGrams = max(actualGrams, volumetricGrams)`.
 5. The normalised address is resolved against the zone directory: exact match, no default.
    An unserved country, unknown index or forbidden zone becomes a per-piece rejection.
-6. A `Quote` is returned with the pieces, the address `destination`, rejections, a
-   normalised `InputSnapshot` and the tariff `configVersion`.
+6. If the destination is a Known allowed zone, each piece is classified against the
+   tariff `ClassificationConfig`. A Rejected address skips classification:
+   `classified` stays empty, so a forbidden index never receives a class.
+7. A `Quote` is returned with the pieces, the address `destination`, rejections,
+   classified pieces, a normalised `InputSnapshot` and the tariff `configVersion`.
+   There are no cents on this result.
 
 The order is load-bearing. `Measurement` assumes validated input, so `Dimensions::canonical()`
 and `MeasuredPiece::from()` throw `InvalidArgumentException` on impossible values instead of
@@ -143,14 +149,15 @@ must not be merged.
 
 Included: input validation, canonical dimensions, Gurtmaß (`Dimensions::girthMm()`),
 volumetric weight, billable weight, the normalised input snapshot, fail-closed zone
-resolution (exact match, no default), and the `ShippingClass` vocabulary with its monotonic
-`atLeast()` escalation.
+resolution (exact match, no default), and per-piece shipping class (`ClassifiedPiece`)
+when the destination is Known. `TariffConfig` holds a required `ClassificationConfig`;
+there is no default table that would silently class every piece as Paket. The engine
+assigns a class only for a Known allowed zone.
 
 Not included, by decision rather than by omission: prices and totals, grouping pieces into
 shipments, surcharges, carrier APIs, persistence, HTTP and the OXID module integration.
-The `Domain` outcome types (`Shippable`, `Rejected`) exist as vocabulary for classification
-and are not yet used by `QuoteEngine` for shipping class. Zone resolution is in the current
-step.
+`Shippable` remains vocabulary for later grouping and tariff; the class on a piece is
+`ShippingClass` on `ClassifiedPiece`. Cents are still later.
 
 ## Tests
 

@@ -9,6 +9,7 @@ use OxidShipping\Engine\Input\QuoteRequest;
 use OxidShipping\Engine\QuoteEngine;
 use OxidShipping\Engine\Tests\Support\TestConfig;
 use OxidShipping\Engine\Result\Quote;
+use OxidShipping\Engine\ShippingClass;
 use PHPUnit\Framework\TestCase;
 
 final class QuoteEngineMeasurementTest extends TestCase
@@ -28,6 +29,18 @@ final class QuoteEngineMeasurementTest extends TestCase
         $this->assertSame(0, $quote->pieces[0]->pieceIndex);
         $this->assertSame(1, $quote->pieces[1]->pieceIndex);
         $this->assertSame(2, $quote->pieces[2]->pieceIndex);
+        $this->assertCount(3, $quote->classified);
+        $this->assertSame(ShippingClass::Paket, $quote->classified[0]->class);
+        $this->assertSame(ShippingClass::Paket, $quote->classified[1]->class);
+        $this->assertSame(ShippingClass::Paket, $quote->classified[2]->class);
+        $this->assertNotSame(
+            $quote->classified[0]->piece->pieceIndex,
+            $quote->classified[1]->piece->pieceIndex,
+        );
+        $this->assertNotSame(
+            $quote->classified[1]->piece->pieceIndex,
+            $quote->classified[2]->piece->pieceIndex,
+        );
     }
 
     public function testFieldOrderDoesNotChangeMeasuredNumbersThroughTheEngine(): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OxidShipping\Engine;
 
+use OxidShipping\Engine\Classification\PieceClassifier;
 use OxidShipping\Engine\Domain\AddressShape;
 use OxidShipping\Engine\Domain\Rejected;
 use OxidShipping\Engine\Input\QuoteRequest;
@@ -22,6 +23,7 @@ final readonly class QuoteEngine
         private InputValidator $validator = new InputValidator(),
         private PieceFactory $pieceFactory = new PieceFactory(),
         private ZoneResolver $zoneResolver = new ZoneResolver(),
+        private PieceClassifier $pieceClassifier = new PieceClassifier(),
     ) {
         if (PHP_INT_SIZE !== 8) {
             throw new \RuntimeException('Shipping engine requires 64-bit PHP.');
@@ -61,10 +63,19 @@ final readonly class QuoteEngine
             }
         }
 
+        $classified = [];
+        if (!$destination instanceof Rejected) {
+            $classified = $this->pieceClassifier->classifyAll(
+                $pieces,
+                $request->config->classification,
+            );
+        }
+
         return Quote::fromPipeline(
             $pieces,
             $destination,
             $rejections,
+            $classified,
             new InputSnapshot(
                 lines: $request->lines,
                 postalCode: $postalCode,
