@@ -1,0 +1,37 @@
+{% if oxcmp_user %}
+    {% set noticeListCount = oxcmp_user.getNoticeListArtCnt() %}
+    {% set wishListCount = oxcmp_user.getWishListArtCnt() %}
+    {% set recommListCount = oxcmp_user.getRecommListsCount() %}
+{% else %}
+    {% set noticeListCount = "0" %}
+    {% set wishListCount = "0" %}
+    {% set recommListCount = "0" %}
+{% endif %}
+{% set notificationsCounter = oView.getCompareItemsCnt()+noticeListCount+wishListCount+recommListCount %}
+
+<button
+        type="button"
+        aria-label="{{ (oxcmp_user.oxuser__oxpassword.value ? "MY_ACCOUNT" : "LOGIN")|translate  }}"
+        class="btn"
+        data-bs-toggle="dropdown"
+        data-bs-auto-close="outside"
+        data-href="{{ seo_url({ ident: oViewConf.getSelfLink() ~ "cl=account" }) }}"
+>
+    {% block dd_layout_page_header_icon_menu_account_button %}
+        <svg><use xlink:href="#person"></use></svg>
+    {% endblock %}
+</button>
+{% if not oxcmp_user.oxuser__oxpassword.value %}
+    {% include "widget/header/loginbox.html.twig" %}
+{% else %}
+    {% block dd_layout_page_header_icon_menu_account_list %}
+        {% include "widget/header/servicebox.html.twig" %}
+    {% endblock %}
+{% endif %}
+
+<a class="btn" href="{{ seo_url({ ident: oViewConf.getSelfLink() ~ "cl=account_noticelist" }) }}" aria-label="{{ translate({ ident: "MY_WISH_LIST" }) }}">
+    <svg>
+        <use xlink:href="#star-fill"></use>
+    </svg>
+    {% if oxcmp_user %} <span class="badge js-noticeListCnt">{% if oxcmp_user.getNoticeListArtCnt() %}{{ oxcmp_user.getNoticeListArtCnt() }}{% endif %}</span>{% endif %}
+</a>

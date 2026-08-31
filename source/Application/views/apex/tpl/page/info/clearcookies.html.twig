@@ -1,0 +1,10 @@
+{% capture append = "oxidBlock_content" %}
+    {% set template_title = oView.getTitle() %}
+    <h1>{{ oView.getTitle() }}</h1>
+    <div class="cmsContent">
+        <p>
+            {% include_content "oxcookiesexplanation" ignore missing %}
+        </p>
+    </div>
+{% endcapture %}
+{% include "layout/page.html.twig" %}

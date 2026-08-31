@@ -1,0 +1,84 @@
+{{ script({ include: "js/changeaddress.min.js", priority: 10, dynamic: __oxid_include_dynamic }) }}
+
+{% block user_checkout_change %}
+    <form action="{{ oViewConf.getSslSelfLink()|raw }}" class="needs-validation" name="order" method="post" novalidate id="user_form">
+        {% block user_checkout_change_form %}
+            {% set aErrors = oView.getFieldValidationErrors() %}
+            {{ oViewConf.getHiddenSid()|raw }}
+            {{ oViewConf.getNavFormParams()|raw }}
+            <input type="hidden" name="cl" value="user">
+            <input type="hidden" name="option" value="{{ oView.getLoginOption() }}">
+            <input type="hidden" name="fnc" value="changeuser">
+            <input type="hidden" name="lgn_cook" value="0">
+            <input type="hidden" name="blshowshipaddress" value="1">
+
+            {% block user_checkout_change_next_step_top %}
+            {% endblock %}
+
+
+            {% block user_checkout_billing %}
+                {% block user_checkout_billing_head %}
+                    <h2 class="h5 d-flex justify-content-between align-items-center">
+                        {{ translate({ ident: "BILLING_ADDRESS" }) }}
+                        <button id="userChangeAddress" class="btn edit-button" name="changeBillAddress" type="submit" title="{{ translate({ ident: "CHANGE" }) }}">
+                            <svg aria-hidden="true">
+                                <use xlink:href="#pencil"></use>
+                            </svg>
+                        </button>
+                    </h2>
+                {% endblock %}
+            {% endblock %}
+
+            {% block user_checkout_billing_form %}
+                <div{% if not aErrors  %} style="display: none;"{% endif %} id="addressForm">
+                    {% if not oxcmp_user.oxuser__oxpassword.value %}
+                        {% include "form/fieldset/user_email.html.twig" %}
+                    {% endif %}
+                    {% include "form/fieldset/user_billing.html.twig" with {noFormSubmit: true, blSubscribeNews: true, blOrderRemark: true} %}
+                </div>
+            {% endblock %}
+
+            {% block user_checkout_billing_feedback %}
+                {% include "widget/address/billing_address.html.twig" with {noFormSubmit: true, blSubscribeNews: true, blOrderRemark: true} %}
+            {% endblock %}
+
+
+            {% block user_checkout_shipping %}
+                {% block user_checkout_shipping_head %}
+                    <h2 class="h5">
+                        {{ translate({ ident: "SHIPPING_ADDRESS" }) }}
+                        {% if oView.showShipAddress() and oxcmp_user.getSelectedAddress() %}
+                            <button id="userChangeShippingAddress" class="btn btn-sm btn-outline-primary float-end edit-button" name="changeShippingAddress" type="submit"{% if not oView.showShipAddress() and oxcmp_user.getSelectedAddress() %} style="display: none;" {% endif %} title="{{ translate({ ident: "CHANGE" }) }}">
+                                <svg>
+                                    <use xlink:href="#pencil"></use>
+                                </svg>
+                            </button>
+                        {% endif %}
+                    </h2>
+                {% endblock %}
+            {% endblock %}
+
+            {% block user_checkout_shipping_change %}
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" name="blshowshipaddress" id="showShipAddress"{% if not oView.showShipAddress() %} checked{% endif %} value="0">
+                        <label for="showShipAddress" class="form-check-label">
+                            {{ translate({ ident: "USE_BILLINGADDRESS_FOR_SHIPPINGADDRESS" }) }}
+                        </label>
+                    </div>
+                </div>
+            {% endblock %}
+            {% block user_checkout_shipping_form %}
+                <div id="shippingAddress"{% if not oView.showShipAddress() %} style="display: none;"{% endif %}>
+                    {% include "form/fieldset/user_shipping.html.twig" with {noFormSubmit: true, onChangeClass: 'user'} %}
+                </div>
+            {% endblock %}
+            {% block user_checkout_shipping_feedback %}
+                {% include "form/fieldset/order_newsletter.html.twig" with {blSubscribeNews: true} %}
+                {% include "form/fieldset/order_remark.html.twig" with {blOrderRemark: true} %}
+            {% endblock %}
+
+        {% endblock %}
+    </form>
+    {% include "form/fieldset/delete_shipping_address_modal.html.twig" %}
+{% endblock %}

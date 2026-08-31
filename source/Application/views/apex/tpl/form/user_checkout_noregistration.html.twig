@@ -1,0 +1,54 @@
+{% set aErrors = oView.getFieldValidationErrors() %}
+
+{% block user_checkout_noregistration %}
+    <form action="{{ oViewConf.getSslSelfLink()|raw }}" class="needs-validation" name="order" method="post" novalidate id="user_form">
+        {% block user_checkout_noregistration_form %}
+            {{ oViewConf.getHiddenSid()|raw }}
+            {{ oViewConf.getNavFormParams()|raw }}
+            <input type="hidden" name="cl" value="user">
+            <input type="hidden" name="option" value="1">
+            {% if not oxcmp_user.oxuser__oxpassword.value %}
+                <input type="hidden" name="fnc" value="createuser">
+            {% else %}
+                <input type="hidden" name="fnc" value="changeuser">
+                <input type="hidden" name="lgn_cook" value="0">
+            {% endif %}
+            <input type="hidden" id="reloadAddress" name="reloadaddress" value="">
+            <input type="hidden" name="blshowshipaddress" value="1">
+
+            {% block user_checkout_noregistration_next_step_top %}
+            {% endblock %}
+
+            <div id="addressForm">
+                <h2 class="h5">{{ translate({ ident: "NOTREGISTERED_ACCOUNTINFO" }) }}</h2>
+                {% include "form/fieldset/user_noaccount.html.twig" %}
+
+                <h2 class="h5">{{ translate({ ident: "BILLING_ADDRESS" }) }}</h2>
+                {% include "form/fieldset/user_billing.html.twig" with {noFormSubmit: true, blOrderRemark: true} %}
+            </div>
+
+            <h2 class="h5">{{ translate({ ident: "SHIPPING_ADDRESS" }) }}</h2>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="blshowshipaddress" id="showShipAddress"{% if not oView.showShipAddress() %} checked{% endif %} value="0">
+                    <label for="showShipAddress" class="form-check-label">
+                         {{ translate({ ident: "USE_BILLINGADDRESS_FOR_SHIPPINGADDRESS" }) }}
+                    </label>
+                </div>
+            </div>
+            {{ script({ include: "js/changeaddress.min.js", priority: 10, dynamic: __oxid_include_dynamic }) }}
+
+            <div id="shippingAddress"{% if not oView.showShipAddress() %} style="display: none;"{% endif %}>
+                {% include "form/fieldset/user_shipping.html.twig" with {noFormSubmit: true} %}
+            </div>
+
+            {% include "form/fieldset/order_remark.html.twig" with {blOrderRemark: true} %}
+
+            {% block user_checkout_noregistration_next_step_bottom %}
+
+            {% endblock %}
+        {% endblock %}
+    </form>
+    {% include "form/fieldset/delete_shipping_address_modal.html.twig" %}
+{% endblock %}

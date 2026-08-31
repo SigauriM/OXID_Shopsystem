@@ -1,0 +1,5 @@
+services:
+  OxidShipping\Engine\QuoteEngine:
+    class: OxidShipping\Engine\QuoteEngine
+    autowire: true
+    public: true

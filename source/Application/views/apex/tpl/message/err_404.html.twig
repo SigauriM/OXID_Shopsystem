@@ -1,0 +1,39 @@
+{% capture append = "oxidBlock_content" %}
+<div class="container-xxl">
+    <div class="err-404 py-5">
+        <h1>{{ translate({ ident: "ERROR" }) }}</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <p>
+                    {% if sUrl %}
+                        {% set sModifiedUrl = sUrl|escape %}
+                        {% set sModifiedUrl = "<i><strong>'" ~ sModifiedUrl ~ "'</strong></i>" %}
+                        {{ translate({ ident: "ERROR_404", args: sModifiedUrl }) }}
+                    {% else %}
+                        {{ translate({ ident: "ERROR_404" }) }}
+                    {% endif %}
+                </p>
+
+                <p>
+                    {{ translate({ ident: "DD_ERR_404_START_TEXT" }) }}<br>
+                    <a href="{{ oViewConf.getHomeLink()|raw }}" class="btn btn-outline-primary" title="{{ translate({ ident: "DD_ERR_404_START_BUTTON" }) }}">{{ translate({ ident: "DD_ERR_404_START_BUTTON" }) }}</a>
+                </p>
+
+                <p>
+                    {{ translate({ ident: "DD_ERR_404_CONTACT_TEXT" }) }}<br>
+                    <a href="{{ seo_url({ ident: oViewConf.getSelfLink() ~ "cl=contact" }) }}" class="btn btn-outline-primary" title="{{ translate({ ident: "DD_ERR_404_CONTACT_BUTTON" }) }}">{{ translate({ ident: "DD_ERR_404_CONTACT_BUTTON" }) }}</a>
+                </p>
+            </div>
+            <div class="col-md-6">
+                <div class="gears-box">
+                    <div class="paper-overlay"></div>
+                    <img alt="{{ translate({ ident: "ERR_404_IMAGE_ALT" }) }}" class="gear-rotate reverse" style="top: -55px; left: 65px;" src="{{ oViewConf.getImageUrl('404/gear.png')|raw }}">
+                    <img alt="{{ translate({ ident: "ERR_404_IMAGE_ALT" }) }}" class="gear-rotate" style="top: 177px; left: -11px;" src="{{ oViewConf.getImageUrl('404/gear.png')|raw }}">
+                    <img alt="{{ translate({ ident: "ERR_404_IMAGE_ALT" }) }}" class="gear-rotate" style="top: 19px; right: -26px;" src="{{ oViewConf.getImageUrl('404/gear.png')|raw }}">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endcapture %}
+{% include "layout/page.html.twig" with {blHideBreadcrumb: true} %}

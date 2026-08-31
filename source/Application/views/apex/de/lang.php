@@ -1,0 +1,195 @@
+<?php
+
+/**
+ * Copyright © OXID eSales AG. All rights reserved.
+ * See LICENSE file for license details.
+ */
+
+$sLangName = "Deutsch";
+
+$aLang = array(
+    'charset'                                               => 'UTF-8',
+
+    // Global
+    'DD_SORT_DESC'                                          => 'absteigend',
+    'DD_SORT_ASC'                                           => 'aufsteigend',
+    'DD_DEMO_ADMIN_TOOL'                                    => 'Admin-Tool starten',
+    'DD_DELETE'                                             => 'Löschen',
+
+    // Form-Validation
+    'DD_FORM_VALIDATION_VALIDEMAIL'                         => 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
+    'DD_FORM_VALIDATION_PASSWORDAGAIN'                      => 'Die Passwörter stimmen nicht überein.',
+    'DD_FORM_VALIDATION_NUMBER'                             => 'Bitte geben Sie eine Zahl ein.',
+    'DD_FORM_VALIDATION_INTEGER'                            => 'Es sind keine Nachkommastellen erlaubt.',
+    'DD_FORM_VALIDATION_POSITIVENUMBER'                     => 'Bitte geben Sie eine positive Zahl ein.',
+    'DD_FORM_VALIDATION_NEGATIVENUMBER'                     => 'Bitte geben Sie eine negative Zahl ein.',
+    'DD_FORM_VALIDATION_REQUIRED'                           => 'Bitte Wert angeben.',
+    'DD_FORM_VALIDATION_CHECKONE'                           => 'Bitte wählen Sie mindestens eine Option.',
+
+    // Header
+    'SEARCH_TITLE'                                          => 'Suchbegriff eingeben...',
+    'SEARCH_SUBMIT'                                         => 'Suchen',
+
+    // Footer
+    'FOOTER_NEWSLETTER_INFO'                                => 'Die neuesten Produkte und die besten Angebote per E-Mail, damit Ihr nichts mehr verpasst.',
+
+    // Startseite
+    'MANUFACTURERSLIDER_SUBHEAD'                            => 'Wir präsentieren Ihnen hier unsere sorgsam ausgewählten Marken, deren Produkte Sie in unserem Shop finden.',
+    'START_BARGAIN_HEADER'                                  => 'Angebote der Woche',
+    'START_NEWEST_HEADER'                                   => 'Frisch eingetroffen',
+    'START_TOP_PRODUCTS_HEADER'                             => 'Topseller',
+    'START_BARGAIN_SUBHEADER'                               => 'Sparen Sie bares Geld mit unseren aktuellen Schnäppchen!',
+    'START_NEWEST_SUBHEADER'                                => 'Frischer geht es nicht. Gerade noch in der Kiste und nun schon im Shop.',
+    'START_TOP_PRODUCTS_SUBHEADER'                          => 'Nur %s Produkte, dafür aber die besten, die wir Euch bieten können.',
+
+    // Kontaktformular
+    'DD_CONTACT_PAGE_HEADING'                               => 'Kontaktieren Sie uns!',
+    'DD_CONTACT_FORM_HEADING'                               => 'Kontaktformular',
+    'DD_CONTACT_MAP_TITLE'                                  => 'Google Map zeigt den Standort von %s',
+
+    // Link-Seite
+    'DD_LINKS_NO_ENTRIES'                                   => 'Es sind leider noch keine Links vorhanden.',
+
+    // 404-Seite
+    'DD_ERR_404_START_TEXT'                                 => 'Vielleicht finden Sie die von Ihnen gewünschten Informationen über unsere Startseite:',
+    'DD_ERR_404_START_BUTTON'                               => 'Startseite aufrufen',
+    'DD_ERR_404_CONTACT_TEXT'                               => 'Dürfen wir Ihnen direkt behilflich sein?<br>Gerne können Sie uns anrufen oder eine E-Mail schreiben:',
+    'DD_ERR_404_CONTACT_BUTTON'                             => 'zur Kontaktseite',
+    'ERR_404_IMAGE_ALT'                                     => 'Die angeforderte Seite konnte nicht gefunden werden.',
+
+    // Login
+    'DD_LOGIN_ACCOUNT_PANEL_CREATE_BODY'                    => 'Durch Ihre Anmeldung in unserem Shop, werden Sie in der Lage sein schneller durch den Bestellvorgang geführt zu werden. Des Weiteren können Sie mehrere Versandadressen speichern und Bestellungen in Ihrem Konto verfolgen.',
+
+    // Rechnungs- und Lieferadresse
+    'DD_USER_LABEL_STATE'                                   => 'Bundesland',
+    'DD_USER_BILLING_LABEL_STATE'                           => 'Bundesland:',
+    'DD_USER_SHIPPING_LABEL_STATE'                          => 'Bundesland:',
+    'DD_USER_SHIPPING_SELECT_ADDRESS'                       => 'auswählen',
+    'DD_USER_SHIPPING_ADD_DELIVERY_ADDRESS'                 => 'neue Adresse hinzufügen',
+    'DD_DELETE_SHIPPING_ADDRESS'                            => 'Lieferadresse löschen',
+
+    // Listen
+    'DD_LISTLOCATOR_FILTER_ATTRIBUTES'                      => 'Filter',
+    'DD_LIST_SHOW_MORE'                                     => 'Produkte ansehen',
+
+    // Lieblingslisten
+    'DD_RECOMMENDATION_EDIT_BACK_TO_LIST'                   => 'zurück zur Übersicht',
+
+    // Downloads
+    'DD_DOWNLOADS_DOWNLOAD_TOOLTIP'                         => 'herunterladen',
+    'DD_FILE_ATTRIBUTES_FILESIZE'                           => 'Dateigröße',
+    'DD_FILE_ATTRIBUTES_OCLOCK'                             => 'Uhr',
+    'DD_FILE_ATTRIBUTES_FILENAME'                           => 'Dateiname',
+
+    // Detailseite
+    'BACK_TO_OVERVIEW'                                      => 'Zur Übersicht',
+    'OF'                                                    => 'von',
+    'IMAGE'                                                 => 'Bild',
+    'DD_RATING_CUSTOMERRATINGS'                             => 'Kundenmeinungen',
+    'PAGE_DETAILS_CUSTOMERS_ALSO_BOUGHT_SUBHEADER'          => 'Kunden die sich diesen Artikel gekauft haben, kauften auch folgende Artikel.',
+    'WIDGET_PRODUCT_RELATED_PRODUCTS_ACCESSORIES_SUBHEADER' => 'Folgende Artikel passen gut zu diesem Artikel.',
+    'WIDGET_PRODUCT_RELATED_PRODUCTS_SIMILAR_SUBHEADER'     => 'Schauen Sie sich doch auch unsere ähnlichen Artikel an.',
+    'WIDGET_PRODUCT_RELATED_PRODUCTS_CROSSSELING_SUBHEADER' => 'Kunden die sich diesen Artikel angesehen haben, haben sich auch folgende Artikel angesehen.',
+    'DETAILS_VPE_MESSAGE_1'                                 => 'Dieser Artikel kann nur in Verpackungseinheiten zu je',
+    'DETAILS_VPE_MESSAGE_2'                                 => 'erworben werden.',
+
+    // Modal-Warenkorb
+    'DD_MINIBASKET_MODAL_TABLE_PRICE'                       => 'Gesamtsumme',
+    'DD_MINIBASKET_CONTINUE_SHOPPING'                       => 'weiter einkaufen',
+
+    // Checkout
+    'DD_BASKET_BACK_TO_SHOP'                                => 'zurück zum Shop',
+    'MOVE_TO_NOTICELIST'                                    => 'Auf die Merkliste',
+    'COPY_TO_NOTICELIST'                                    => 'Kopieren auf die Merkliste',
+    'STEPS_SEND'                                            => 'Adresse',
+    'STEPS_PAY'                                             => 'Zahlung & Versand',
+    'STEPS_ORDER'                                           => 'Bestellen',
+    'SHIPPING_METHOD'                                       => 'Versandart',
+    'SELECT_SHIPPING_METHOD'                                => 'Versandart auswählen',
+
+    // E-Mails
+    'DD_FOOTER_FOLLOW_US'                                    => 'Folgen Sie uns',
+    'DD_FORGOT_PASSWORD_HEADING'                            => 'Passwort vergessen',
+    'DD_INVITE_HEADING'                                     => 'Artikel-Empfehlung',
+    'DD_INVITE_LINK'                                        => 'Link',
+    'DD_NEWSLETTER_OPTIN_HEADING'                           => 'Ihre Newsletter-Anmeldung',
+    'DD_ORDERSHIPPED_HEADING'                               => 'Versandbestätigung - Bestellung',
+    'DD_PRICEALARM_HEADING'                                 => 'Preisalarm',
+    'DD_REGISTER_HEADING'                                   => 'Ihre Registrierung',
+    'DD_DOWNLOADLINKS_HEADING'                              => 'Ihre Downloadlinks - Bestellung',
+    'DD_WISHLIST_HEADING'                                   => 'Wunschzettel',
+
+    'DD_ROLES_BEMAIN_UIROOTHEADER'                          => 'Menü',
+
+    'DD_DELETE_MY_ACCOUNT_WARNING'                          => 'Dieser Vorgang kann nicht rückgängig gemacht werden. Alle persönlichen Daten werden dauerhaft gelöscht.',
+    'DD_DELETE_MY_ACCOUNT'                                  => 'Konto löschen',
+    'DD_DELETE_MY_ACCOUNT_CONFIRMATION_QUESTION'            => 'Sind Sie sicher, dass Sie Ihr Konto löschen wollen?',
+    'DD_DELETE_MY_ACCOUNT_CANCEL'                           => 'Abbrechen',
+    'DD_DELETE_MY_ACCOUNT_SUCCESS'                          => 'Ihr Konto wurde gelöscht',
+    'DD_DELETE_MY_ACCOUNT_ERROR'                            => 'Das Konto konnte nicht gelöscht werden',
+
+    // Account -> My product reviews
+    'DD_DELETE_REVIEW_AND_RATING'                           => 'Bewertung und Sterne-Rating löschen',
+    'DD_REVIEWS_NOT_AVAILABLE'                              => 'Es liegen keine Bewertungen vor',
+    'DD_DELETE_REVIEW_CONFIRMATION_QUESTION'                => 'Sind Sie sicher, dass Sie die Bewertung löschen wollen?',
+    'WHERE_DO_YOU_WANT_TO_GO'                => 'Wo willst du hin?',
+    'YOUR_REVIEW'                => 'Deine Bewertung',
+    'ON'                => 'am',
+    'BY'                => 'von',
+    'BACK'                => 'Zurück',
+
+    // Contact page
+    'DD_SELECT_SALUTATION'                                  => 'Bitte auswählen',
+
+    'DD_CATEGORY_RESET_BUTTON'                              => 'Zurücksetzen',
+    'MOVE_TO_WISH_LIST'                                     => 'Auf Merkzettel verschieben',
+    'SUMMARY'                                               => 'Übersicht',
+    'COMPLETE_MARKED_FIELDS'                                => 'Pflichtfelder bitte ausfüllen',
+    'WRITE_REVIEW'                                          => 'Bewertung schreiben',
+    'PRODUCT_REVIEW'                                        => 'Kundenmeinungen',
+    'SORT'                                                  => 'Sortieren',
+    'HELLO'                                                 => 'Hallo',
+    'STREET'                                                => 'Straße',
+    'STREETNO'                                              => 'Nr.',
+    'POSTAL_CODE'                                           => 'PLZ',
+    'CITY'                                                  => 'Ort',
+    'DISPLAY'                                               => 'Anzeige',
+    'NOT_SPECIFIED'                                         => 'Keine Angabe',
+    'MORE_ABOUT'                                            => 'Mehr über',
+    'SHOW_ME_MORE'                                          => 'Zeig mir mehr',
+    'USER_SHIPPING_SELECTED'                                => 'ausgewählt',
+    'ADDRESSES'                                             => 'Adressen',
+    'DELIVERY_PAYMENT'                                      => 'Versand & Zahlung',
+    'CHECK_ORDER'                                           => 'Überprüfen',
+    'LANGUAGE'                                              => 'Sprache',
+    'CURRENCY'                                              => 'Währung',
+    'SHOW_NAVIGATION'                                       => 'Navigation anzeigen',
+    'MENU'                                                  => 'Menü',
+    'FAVOURITES'                                            => 'Favoriten',
+    'MOVE_CAROUSEL_LEFT'                                   => 'Karussell nach links verschieben',
+    'MOVE_CAROUSEL_RIGHT'                                  => 'Karussell nach rechts verschieben',
+    'WATCH_NOW'                                             => 'Jetzt anschauen',
+    'PAYMENT_METHODS'                                       => 'Zahlungsarten',
+    'TRUST_BADGES'                                          => 'Trust Badges',
+    'SOCIAL_MEDIA'                                          => 'Soziale Medien',
+    'CATEGORY_IMAGE_ALT'                                    => 'Kategoriebild der Kategorie “%s”',
+    'MANUFACTURER_IMAGE_ALT'                                => 'Herstellerlogo des Herstellers “%s“',
+    'PRODUCT_SINGLE_IMAGE_ALT'                              => 'Artikelbild des Artikels “%s“',
+    'PRODUCT_GALLERY_IMAGE_ALT'                             => 'Artikelbild %d des Artikels “%s“',
+
+    // Minibasket
+    'CART_NUMBER_OF_ITEMS'                                  => 'Warenkorb - Anzahl der Artikel: %d',
+    'SHIPPING_PAYMENT_COST_CALCULATE_AT_CHECKOUT'           => 'Die Versandkosten im Minibasket basieren auf Bestellungs-Daten und können sich bei Änderungen, z. B. der Lieferadresse, ändern.',
+    'SHIPPING_PAYMENT_COST_CANNOT_CALCULATE'                => 'Die Versandkosten können noch nicht berechnet werden, da erforderliche Informationen für die Berechnung fehlen.',
+
+    // Private sales
+    'FORM_REGISTER_IAGREETOTERMS1'                          => "Ich stimme den",
+    'FORM_REGISTER_IAGREETOTERMS3'                          => "zu",
+    'FORM_REGISTER_IAGREETORIGHTOFWITHDRAWAL1'              => "Ich stimme den",
+    'FORM_REGISTER_IAGREETORIGHTOFWITHDRAWAL3'              => "zu.",
+    'MESSAGE_PAYMENT_BANK_CODE_INVALID'                     => 'Bitte geben Sie einen gültigen BIC-Code ein!',
+);
+
+/*
+[{ oxmultilang ident="GENERAL_YOUWANTTODELETE"}]
+*/

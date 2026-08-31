@@ -1,0 +1,14 @@
+{% if Errors|is_array and Errors.default|is_array and Errors.default|length > 0 %}
+    <div class="container-xxl mt-5">
+        {% for key, oEr in Errors.default %}
+            <div class="alert alert-danger alert-dismissible">
+                <p>{{ oEr.getOxMessage() | raw }}</p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close - {{ oEr.getOxMessage() }}"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if Errors.popup|is_array and Errors.popup|length > 0 %}
+    {% include "message/errors_modal.html.twig" %}
+{% endif %}

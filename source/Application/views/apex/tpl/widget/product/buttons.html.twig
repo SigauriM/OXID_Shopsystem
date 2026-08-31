@@ -1,0 +1,19 @@
+{% set oSelections = oSelectionList.getSelections() %}
+
+{% if oSelections %}
+    <div class="mb-3 dropDown">
+        {% if not blHideLabel %}
+        <label class="form-label">{{ oSelectionList.getLabel() }}</label>
+        {% endif %}
+        <div class="dropdown">
+            {% set oActiveSelection = oSelectionList.getActiveSelection() %}
+            {% if editable == true or editable is not defined %}
+                <input type="hidden" name="{{ sFieldName|default("varselid") }}[{{ iKey }}]" value="{% if oActiveSelection %}{{ oActiveSelection.getValue() }}{% endif %}">
+
+                {% for oSelection in oSelections %}
+                    <a href="{{ oSelection.getLink()|raw }}" data-selection-id="{{ oSelection.getValue() }}" class="btn btn-outline-primary{% if oSelection.isActive() %} active{% endif %}{% if oSelection.isDisabled() %} disabled{% endif %}">{{ oSelection.getName() }}</a>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}

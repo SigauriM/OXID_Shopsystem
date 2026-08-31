@@ -1,0 +1,8 @@
+.env
+/vendor/
+/source/tmp/
+/source/log/
+/var/
+/source/config.inc.php
+/source/Setup/
+.phpunit.cache

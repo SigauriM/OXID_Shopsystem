@@ -1,0 +1,48 @@
+{% block dd_widget_sidebar_categorytree %}
+    {% if oxcmp_categories %}
+        {% set categories = oxcmp_categories.getClickRoot() %}
+        {% set act = oxcmp_categories.getClickCat() %}
+        {% if categories %}
+            {% set deepLevel = oView.getDeepLevel() %}
+            <nav class="categoryBox d-block d-sm-none d-md-block" aria-labelledby="sidebar-header">
+                <div class="sidebar-header"><strong>{{ translate({ ident: "CATEGORIES" }) }}</strong></div>
+                {% block dd_widget_sidebar_categorytree_inner %}
+                    <ol class="nav flex-column">
+                        {% block dd_widget_sidebar_categorytree_list %}
+                            {% macro tree(categories) %}
+                                {% set deepLevel = deepLevel+1 %}
+                                {% set oContentCat = oView.getContentCategory() %}
+                                {% for _cat in categories %}
+                                    {% if _cat.getIsVisible() %}
+                                        {# CMS category #}
+                                        {% if _cat.getContentCats() and deepLevel > 1 %}
+                                            {% for _oCont in _cat.getContentCats() %}
+                                                <li class="nav-item{% if oContentCat and oContentCat.getId()==_oCont.getId() %} active{% else %} end{% endif %}" >
+                                                    <a href="nav-link{{ _oCont.getLink()|raw }}" title="{{ _oCont.oxcontents__oxtitle.value }}"><i></i>{{ _oCont.oxcontents__oxtitle.value }}</a>
+                                                </li>
+                                            {% endfor %}
+                                        {% endif %}
+
+                                        {# subcategories #}
+                                        {% set oSubCats = _cat.getSubCats() %}
+                                        {% set hasVisibleSubCats = _cat.getHasVisibleSubCats() %}
+                                        <li class="nav-item{% if not oContentCat and act and act.getId()==_cat.getId() %} active{% elseif _cat.expanded %} exp{% endif %}{% if not hasVisibleSubCats %} end{% endif %}">
+                                            <a class="nav-link" href="{{ _cat.getLink()|raw }}" title="{{ _cat.oxcategories__oxtitle.value }}">
+                                                <svg>
+                                                    <use xlink:href="#{% if _cat.expanded and hasVisibleSubCats %}down{% else %}right{% endif %}"></use>
+                                                </svg>
+                                            </a>
+                                            {% if hasVisibleSubCats and _cat.expanded %}
+                                                <ul class="nav flex-column">{% import _self as self %}{{ self.tree(oSubCats) }}</ul>
+                                            {% endif %}
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endmacro %}{% import _self as self %}{{ self.tree(categories) }}
+                        {% endblock %}
+                    </ol>
+                {% endblock %}
+            </nav>
+        {% endif %}
+    {% endif %}
+{% endblock %}

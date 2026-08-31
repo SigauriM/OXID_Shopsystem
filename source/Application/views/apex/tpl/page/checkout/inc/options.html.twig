@@ -1,0 +1,63 @@
+{% block checkout_user_options %}
+    {% set sColClass = "col-lg-6" %}
+    {% if oView.getShowNoRegOption() %}
+        {% set sColClass = "col-lg-4" %}
+    {% endif %}
+
+    {% block checkout_options_login %}
+        <div class="card mb-3">
+            <h2 class="h4 card-header card-title">
+                {{ translate({ ident: "LOGIN" }) }}
+            </h2>
+            <div class="card-body">
+                {% include "form/login.html.twig" %}
+            </div>
+        </div>
+    {% endblock %}
+
+    {% block checkout_options_reg %}
+        <div class="card mb-3">
+            <h2 class="h4 card-header card-title">
+                {{ translate({ ident: "OPEN_ACCOUNT" }) }}
+            </h2>
+            <div class="card-body">
+                <form action="{{ oViewConf.getSslSelfLink()|raw }}" method="post" id="optionRegistration">
+                    {{ oViewConf.getHiddenSid()|raw }}
+                    {{ oViewConf.getNavFormParams()|raw }}
+                    <input type="hidden" name="cl" value="user">
+                    <input type="hidden" name="fnc" value="">
+                    <input type="hidden" name="option" value="3">
+                    <button class="btn btn-outline-primary w-100 mb-2"
+                            type="submit">{{ translate({ ident: "OPEN_ACCOUNT" }) }}</button>
+                </form>
+            </div>
+        </div>
+    {% endblock %}
+
+    {% block checkout_options_noreg %}
+        {% if oView.getShowNoRegOption() %}
+            <div class="card mb-3">
+                <h2 class="h4 card-header card-title">
+                    {{ translate({ ident: "PURCHASE_WITHOUT_REGISTRATION" }) }}
+                </h2>
+                <div class="card-body">
+                    <form action="{{ oViewConf.getSslSelfLink()|raw }}" method="post" id="optionNoRegistration">
+                        {{ oViewConf.getHiddenSid()|raw }}
+                        {{ oViewConf.getNavFormParams()|raw }}
+                        <input type="hidden" name="cl" value="user">
+                        <input type="hidden" name="fnc" value="">
+                        <input type="hidden" name="option" value="1">
+                        {% block checkout_options_noreg_text %}
+                            {% if oView.isDownloadableProductWarning() %}
+                                <p class="errorMsg">{{ translate({ ident: "MESSAGE_DOWNLOADABLE_PRODUCT" }) }}</p>
+                            {% endif %}
+                        {% endblock %}
+                        <button class="btn btn-outline-primary w-100 mb-2"
+                                type="submit">{{ translate({ ident: "PURCHASE_WITHOUT_REGISTRATION" }) }}</button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+    {% endblock %}
+
+{% endblock %}

@@ -1,0 +1,55 @@
+{% capture append = "oxidBlock_pageBody" %}
+    {% if oView.showRDFa() %}
+        {% include "rdfa/rdfa.html.twig" %}
+    {% endif %}
+
+    {% block layout_header %}
+        {% include "layout/header.html.twig"  with {active_step: active_step} %}
+    {% endblock %}
+
+    <div id="wrapper" class="wrapper{% if sidebar %} sidebar{{ sidebar }}{% endif %}">
+
+        {% if sidebar and sidebar != "Right" %}
+            <div class="{{ oView.getClassKey() }}">
+                {% include "layout/sidebar.html.twig" %}
+            </div>
+        {% endif %}
+
+        <main class="content">
+            {% block content_main %}
+                {% include "message/errors.html.twig" %}
+
+                {% if oView.getClassKey() == "details" or oView.getClassKey() == "content" and not blHideBreadcrumb %}
+                    {% block layout_breadcrumb %}
+                        {% include "widget/breadcrumb.html.twig" %}
+                    {% endblock %}
+                {% endif %}
+
+                {% for key, oEr in Errors.loginBoxErrors %}
+                    <div class="alert alert-danger">
+                        <p id="errorBadLogin">{{ oEr.getOxMessage() }}</p>
+                    </div>
+                    {% set bIsError = 1 %}
+                {% endfor %}
+
+                {% for _block in oxidBlock_content %}
+                    {{ _block|raw }}
+                {% endfor %}
+            {% endblock %}
+        </main>
+
+        {% if sidebar and sidebar == "Right" %}
+            <div class="{{ oView.getClassKey() }}">
+                {% include "layout/sidebar.html.twig" %}
+            </div>
+        {% endif %}
+    </div>
+
+    {% include "layout/footer.html.twig" %}
+    {% block dd_layout_page_header_icon_menu_minibasket_list %}
+    {% include_dynamic "widget/minibasket/minibasket.html.twig" %}
+    {% endblock %}
+    {% block layout_init_social %}
+    {% endblock %}
+{% endcapture %}
+{% include "layout/base.html.twig" %}

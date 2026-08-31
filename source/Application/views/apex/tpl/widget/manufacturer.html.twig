@@ -1,0 +1,26 @@
+{% set manufacturerWidth = oViewConf.getViewThemeParam('sManufacturerWidth') %}
+{% set count = 0 %}
+{% if oView.getManufacturerForSlider() %}
+<div class="container-xxl">
+    <div class="py-5 manufacturer">
+        <div class="container{% if manufacturerWidth == 'w100cContainer' %}-xxl{% else %}-fluid{% endif %}">
+            <h2>{{ translate({ ident: "OUR_BRANDS" }) }}</h2>
+            <span class="subhead">{{ translate({ ident: "MANUFACTURERSLIDER_SUBHEAD" }) }}</span>
+
+            <div class="row manufacturer-list">
+                {% for oManufacturer in oView.getManufacturerForSlider() %}
+                    {% if oManufacturer.getIconUrl() and count < 8 %}
+                        <div class="col-6 col-md-4 col-lg">
+                            <a href="{{ oManufacturer.getLink()|raw }}" title="{{ translate({ ident: "VIEW_ALL_PRODUCTS" }) }}" class="d-block text-center">
+                                {% set aImgDimensions = oManufacturer.getIconUrl()|getimagesize %}
+                                <img loading="lazy" class="manufacturer-list-logo" src="{{ oManufacturer.getIconUrl()|raw }}" alt="{{ translate({ ident: "MANUFACTURER_IMAGE_ALT", args: oManufacturer.oxmanufacturers__oxtitle.value }) }}" width="{{ aImgDimensions.0 }}" height="{{ aImgDimensions.1 }}">
+                            </a>
+                        </div>
+                        {% set count = count + 1 %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

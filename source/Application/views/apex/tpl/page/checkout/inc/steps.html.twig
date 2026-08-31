@@ -1,0 +1,51 @@
+{% block checkout_steps_main %}
+    <section aria-labelledby="checkout-steps">
+    <div id="checkout-steps" class="row g-0 text-center ms-auto steps">
+        {% if oxcmp_basket.getProductsCount() %}
+            {% set showStepLinks = true %}
+        {% endif %}
+
+        {% set showStepLinks = false %}
+        {% if not oView.isLowOrderPrice() and oxcmp_basket.getProductsCount() %}
+            {% set showStepLinks = true %}
+        {% endif %}
+
+        {% block checkout_steps_send %}
+            <div class="col">
+                <div class="step step-1{% if active == 1 %} active{% elseif active > 1 %} done{% endif %}">
+                    <span class="num">1</span>
+                    <span class="text">{{ translate({ ident: "STEPS_SEND" }) }}</span>
+                </div>
+            </div>
+        {% endblock %}
+
+        {% set showStepLinks = false %}
+        {% if active != 1 and oxcmp_user and not oView.isLowOrderPrice() and oxcmp_basket.getProductsCount() %}
+            {% set showStepLinks = true %}
+        {% endif %}
+
+        {% block checkout_steps_pay %}
+            <div class="col">
+                <div class="step step-2{% if active == 2 %} active{% elseif active > 2 %} done{% else %} text-muted{% endif %}">
+                    <span class="num">2</span>
+                    <span class="text">{{ translate({ ident: "STEPS_PAY" }) }}</span>
+                </div>
+            </div>
+        {% endblock %}
+
+        {% set showStepLinks = false %}
+        {% if active != 1 and oxcmp_user and oxcmp_basket.getProductsCount() and oView.getPaymentList() and not oView.isLowOrderPrice() %}
+            {% set showStepLinks = true %}
+        {% endif %}
+
+        {% block checkout_steps_order %}
+            <div class="col">
+                <div class="step step-3{% if active == 3 %} active{% elseif active > 3 %} done{% else %} text-muted{% endif %}">
+                    <span class="num">3</span>
+                    <span class="text">{{ translate({ ident: "STEPS_ORDER" }) }}</span>
+                </div>
+            </div>
+        {% endblock %}
+    </div>
+    </section>
+{% endblock %}

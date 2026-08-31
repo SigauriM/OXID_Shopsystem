@@ -1,0 +1,86 @@
+{% if not blWorkaroundInclude %}
+    {% capture append = "oxidBlock_content" %}
+        {% if oxcmp_user %}
+            {% set force_sid = oView.getSidForWidget() %}
+        {% endif %}
+        {{ include_widget({ cl: "oxwArticleDetails", _parent: oView.getClassKey(), nocookie: 1, force_sid: force_sid, _navurlparams: oViewConf.getNavUrlParams(), _object: oView.getProduct(), anid: oViewConf.getActArticleId(), iPriceAlarmStatus: oView.getPriceAlarmStatus(), sorting: oView.getSortingParameters(), skipESIforUser: 1 }) }}
+    {% endcapture %}
+    {% include "layout/page.html.twig" %}
+{% else %}
+    {% set oDetailsProduct = oView.getProduct() %}
+    {% set oPictureProduct = oView.getPicturesProduct() %}
+    {% set currency = oView.getActCurrency() %}
+    {% set sPageHeadTitle = oDetailsProduct.oxarticles__oxtitle.value ~ ' ' ~ oDetailsProduct.oxarticles__oxvarselect.value %}
+    {% set headerImageWidth = oViewConf.getViewThemeParam('sHeaderImageWidth') %}
+    {% set productListNavigation = oViewConf.getViewThemeParam('sProductListNavigation') %}
+
+    {% if oView.getPriceAlarmStatus() == 1 %}
+        {% set _statusMessage1 = "PAGE_DETAILS_THANKYOUMESSAGE1"|translate ~ " " ~ oxcmp_shop.oxshops__oxname.value %}
+        {% set _statusMessage2 = "PAGE_DETAILS_THANKYOUMESSAGE2"|translate ~ " " %}
+        {% set _statusMessage3 = "PAGE_DETAILS_THANKYOUMESSAGE3"|translate ~ " " ~ oView.getBidPrice() ~ " " ~ currency.sign ~ " " %}
+        {% set _statusMessage4 = "PAGE_DETAILS_THANKYOUMESSAGE4"|translate %}
+        {% include "message/success.html.twig" with { statusMessage: _statusMessage1 ~ _statusMessage2 ~ _statusMessage3 ~ _statusMessage4 } %}
+    {% elseif oView.getPriceAlarmStatus() == 2 %}
+        {% set _statusMessage = "MESSAGE_WRONG_VERIFICATION_CODE"|translate %}
+        {% include "message/error.html.twig" with {statusMessage: _statusMessage} %}
+    {% elseif oView.getPriceAlarmStatus() is same as(0) %}
+        {% set _statusMessage1 = ("MESSAGE_NOT_ABLE_TO_SEND_EMAIL"|translate) ~ "<br>" %}
+        {% set _statusMessage2 = "MESSAGE_VERIFY_YOUR_EMAIL"|translate %}
+        {% include "message/error.html.twig" with { statusMessage: _statusMessage1 ~ _statusMessage2 } %}
+    {% endif %}
+
+    <div id="details_container">
+        {% if productListNavigation %}
+            {# details locator #}
+            {% set actCategory = oView.getActiveCategory() %}
+
+            <div class="detailsParams listRefine bottomRound product-list-navigation">
+                <div class="container-xxl">
+                    <div class="row refineParams clear" id="detailsItemsPager">
+                        <div class="col-3 pager-overview-link">
+                            <a href="{{ actCategory.toListLink|raw }}">
+                                <svg aria-hidden="true">
+                                    <use xlink:href="#bars"></use>
+                                </svg>
+                                {{ translate({ ident: "BACK_TO_OVERVIEW" }) }}
+                            </a>
+                        </div>
+                        <div class="col-3 pager-prev">
+                            {% if actCategory.prevProductLink %}
+
+                                <a id="linkPrevArticle" href="{{ actCategory.prevProductLink|raw }}">
+                                    <svg aria-hidden="true">
+                                        <use xlink:href="#left"></use>
+                                    </svg>
+                                    {{ translate({ ident: "PREVIOUS_PRODUCT" }) }}
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div class="col-3 pager-current-page">
+                            {% if actCategory.iProductPos %}
+                                {{ translate({ ident: "PRODUCT" }) }} {{ actCategory.iProductPos }} {{ translate({ ident: "OF" }) }} {{ actCategory.iCntOfProd }}
+                            {% endif %}
+                        </div>
+                        <div class="col-3 pager-next">
+                            {% if actCategory.nextProductLink %}
+                                <a id="linkNextArticle"
+                                   href="{{ actCategory.nextProductLink|raw }}">
+                                    {{ translate({ ident: "NEXT_PRODUCT" }) }}
+                                    <svg aria-hidden="true">
+                                        <use xlink:href="#right"></use>
+                                    </svg>
+                                </a>
+
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if blFullwidth %}
+                        <hr>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        {% set actCategory = oView.getActiveCategory() %}
+        {% include "page/details/inc/fullproductinfo.html.twig" %}
+    </div>
+{% endif %}

@@ -1,0 +1,60 @@
+{% capture append = "oxidBlock_content" %}
+    {% set search_title = "SEARCH"|translate %}
+    {% set searchparamforhtml = oView.getSearchParamForHtml() %}
+    {% set template_title = search_title ~ "-" ~ searchparamforhtml %}
+    {% set search_head = "HITS_FOR"|translate %}
+    {% set search_head = oView.getArticleCount() ~ " " ~ search_head ~ ' "' ~ oView.getSearchParamForHtml() ~ '"' %}
+    {% set showPopBreadcrump = oViewConf.getViewThemeParam('sShowPopBreadcrump') %}
+
+    {% block search_header %}
+        <div class="bg-white list-header mb-4">
+            <div class="container-xxl">
+                <div class="row">
+                    <div class="col-12{% if actCategory.getIconUrl() %} col-md-6 order-2 order-md-1 {% endif %}">
+                        {% if showPopBreadcrump %}
+                            <div class="row">
+                                {% include "widget/breadcrumb.html.twig" %}
+                            </div>
+                        {% endif %}
+
+                        <h1 class="h2">
+                            {{ search_head }}
+                        </h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endblock %}
+    {% block search_results %}
+        <div class="container-xxl">
+            {% if oView.getArticleCount() %}
+                <div class="d-flex py-3">
+                    <div class="sidebar-display ms-auto">
+                        {% block search_top_listlocator %}
+                            {% include "widget/locator/listlocator.html.twig" with {locator: oView.getPageNavigationLimitedTop(), listDisplayType: true, itemsPerPage: true, sort: true} %}
+                        {% endblock %}
+                    </div>
+                </div>
+            {% else %}
+                <p class="alert alert-info">{{ translate({ ident: "NO_ITEMS_FOUND" }) }}</p>
+            {% endif %}
+            <div class="row">
+                {% if oView.getArticleList() %}
+                    {% block search_list_productlist %}
+                        {% include "widget/product/list.html.twig" with {type: oView.getListDisplayType(), listId: "searchList", products: oView.getArticleList(), showMainLink: true} %}
+                    {% endblock %}
+                {% endif %}
+                {% if oView.getArticleCount() %}
+                    {% block search_bottom_listlocator %}
+                        {% include "widget/locator/listlocator.html.twig" with {locator: oView.getPageNavigationLimitedBottom(), place: "bottom"} %}
+                    {% endblock %}
+                {% endif %}
+            </div>
+        </div>
+    {% endblock %}
+    </div>
+    {{ insert_tracker({title: template_title}) }}
+{% endcapture %}
+{% set template_title = "SEARCH"|translate %}
+
+{% include "layout/page.html.twig" with {title: template_title, location: "SEARCH"|translate} %}

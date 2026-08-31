@@ -1,0 +1,52 @@
+<div id="detailsMain" class="details">
+    {% include "page/details/inc/productmain.html.twig" %}
+
+    {% include "page/details/inc/accordeon.html.twig" %}
+
+    <!-- CMS -->
+
+    {% block details_productmain_reviews %}
+        {% if oView.isReviewActive() %}
+            {% include "widget/reviews/reviews.html.twig" %}
+        {% endif %}
+    {% endblock %}
+
+    {% include_content 'oxstartslot4' ignore missing %}
+</div>
+
+<div class="details-more row-spacer">
+    <div class="container-xxl">
+        <div class="row">
+            {% set oManufacturer = oView.getManufacturer() %}
+            {% if oManufacturer and oManufacturer.oxmanufacturers__oxshortdesc.value %}
+                <div class="col-12 col-md-6">
+                    <div class="details-more-manufacturer">
+                        {% if oManufacturer and oManufacturer.getIconUrl() %}
+                            {% set aImgDimensions = oManufacturer.getIconUrl()|getimagesize %}
+                            <img loading="lazy" class="manufacturer-list-logo" src="{{ oManufacturer.getIconUrl()|raw }}"
+                                 alt="{{ translate({ ident: "MANUFACTURER_IMAGE_ALT", args: oManufacturer.oxmanufacturers__oxtitle.value }) }}" width="{{ aImgDimensions.0 }}"
+                                 height="{{ aImgDimensions.1 }}">
+                        {% else %}
+                            <div class="h5">{{ oManufacturer.oxmanufacturers__oxtitle.value }}</div>
+                        {% endif %}
+                        <p>{{ oManufacturer.oxmanufacturers__oxshortdesc.value }}</p>
+                        <a class="btn btn-outline-primary" href="{{ oManufacturer.getLink()|raw }}"
+                           title="{{ oManufacturer.oxmanufacturers__oxtitle.value }}">
+                            {{ translate({ ident: "SHOW_ME_MORE" }) }}
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="col-12 col-md-6">
+                <div class="details-more-cms">
+                    <!-- CMS Content goes here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="detailsRelated" class="details-related">
+    {% include "page/details/inc/related_products.html.twig" %}
+</div>

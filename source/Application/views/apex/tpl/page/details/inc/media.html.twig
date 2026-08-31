@@ -1,0 +1,19 @@
+{% if oDetailsProduct.oxarticles__oxfile.value %}
+    <a id="productFile" href="{{ oViewConf.getMediaPictureUrl()|raw }}{{ oDetailsProduct.oxarticles__oxfile.value|raw }}">{{ oDetailsProduct.oxarticles__oxfile.value }}</a>
+{% endif %}
+
+{% if oView.getMediaFiles() %}
+    {% for oMediaUrl in oView.getMediaFiles() %}
+        {% set sUrl = oMediaUrl.oxmediaurls__oxurl.value %}
+        {% set blIsYouTubeMedia = false %}
+        {% if 'youtube.com' in sUrl or 'youtu.be' in sUrl %}
+            {% set blIsYouTubeMedia = true %}
+        {% endif %}
+
+        {% if not loop.first %}
+        {% endif %}
+        <div class="{% if blIsYouTubeMedia %}ratio ratio-16x9{% endif %}">
+            {{ oMediaUrl.getHtml()|raw }}
+        </div>
+    {% endfor %}
+{% endif %}

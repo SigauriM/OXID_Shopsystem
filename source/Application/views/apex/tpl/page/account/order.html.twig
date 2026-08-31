@@ -1,0 +1,102 @@
+{% capture append = "oxidBlock_content" %}
+    {% set template_title = "ORDER_HISTORY"|translate %}
+    <div class="container-xxl py-5">
+        <div class="row">
+            <h1 class="h3 page-header col pl-0 ml-3">
+                {{ translate({ ident: "ORDER_HISTORY" }) }}
+            </h1>
+            <div class="col-12 col-sm-3 button-col">
+                {% include "page/account/inc/account_menu.html.twig" with {active_link: "orderhistory"} %}
+            </div>
+        </div>
+
+        {% set oOrders = oView.getOrderList() %}
+
+        {% block account_order_history %}
+            {% if oOrders and oOrders|length > 0 %}
+                {% set oArticleList = oView.getOrderArticleList() %}
+                {% for order in oOrders %}
+                    <div class="card card-lg mb-3">
+                        <div class="card-header">
+                            <div class="row">
+                                <div class="col-3">
+                                    <strong>{{ translate({ ident: "DATE", suffix: "COLON" }) }}</strong>
+                                    <span id="accOrderDate_{{ order.oxorder__oxordernr.value }}">{{ order.oxorder__oxorderdate.value|date_format("%d.%m.%Y") }}</span>
+                                    <span>{{ order.oxorder__oxorderdate.value|date_format("%H:%M:%S") }}</span>
+                                </div>
+                                <div class="col-3">
+                                    <strong>{{ translate({ ident: "STATUS" }) }}</strong>
+                                    <span id="accOrderStatus_{{ order.oxorder__oxordernr.value }}">
+                                            {% if order.oxorder__oxstorno.value %}
+                                                <span class="note">{{ translate({ ident: "ORDER_IS_CANCELED" }) }}</span>
+                                            {% elseif order.oxorder__oxsenddate.value !=" - " %}
+                                                <span>{{ translate({ ident: "SHIPPED" }) }}</span>
+                                            {% else %}
+                                                <span class="note">{{ translate({ ident: "NOT_SHIPPED_YET" }) }}</span>
+                                            {% endif %}
+                                        </span>
+                                </div>
+                                <div class="col-3">
+                                    <strong>{{ translate({ ident: "ORDER_NUMBER" }) }}</strong>
+                                    <span id="accOrderNo_{{ order.oxorder__oxordernr.value }}">{{ order.oxorder__oxordernr.value }}</span>
+                                </div>
+                                <div class="col-3">
+                                    <strong>{{ translate({ ident: "SHIPMENT_TO" }) }}</strong>
+                                    <span id="accOrderName_{{ order.oxorder__oxordernr.value }}">
+                                            {% if order.oxorder__oxdellname.value %}
+                                                {{ order.oxorder__oxdelfname.value }}
+                                                {{ order.oxorder__oxdellname.value }}
+                                            {% else %}
+                                                {{ order.oxorder__oxbillfname.value }}
+                                                {{ order.oxorder__oxbilllname.value }}
+                                            {% endif %}
+                                        </span>
+                                    {% if order.getShipmentTrackingUrl() %}
+                                        &nbsp;|&nbsp;<strong>{{ translate({ ident: "TRACKING_ID" }) }}</strong>
+                                        <span id="accOrderTrack_{{ order.oxorder__oxordernr.value }}">
+                                                <a href="{{ order.getShipmentTrackingUrl()|raw }}">{{ translate({ ident: "TRACK_SHIPMENT" }) }}</a>
+                                            </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <strong>{{ translate({ ident: "CART" }) }}</strong>
+                            {% block account_order_history_cart_items %}
+                                <ol class="list-unstyled">
+                                    {% for orderitem in order.getOrderArticles(true) %}
+                                        {% set sArticleId = orderitem.oxorderarticles__oxartid.value %}
+                                        {% set oArticle = oArticleList[sArticleId] %}
+                                        <li id="accOrderAmount_{{ order.oxorder__oxordernr.value }}_{{ loop.index }}">
+                                            {{ orderitem.oxorderarticles__oxamount.value }} {{ translate({ ident: "QNT" }) }}
+                                            {% if oArticle.oxarticles__oxid.value and oArticle.isVisible() %}
+                                            <a id="accOrderLink_{{ order.oxorder__oxordernr.value }}_{{ loop.index }}"
+                                               href="{{ oArticle.getLink()|raw }}">
+                                                {% endif %}
+                                                {{ orderitem.oxorderarticles__oxtitle.value }} {{ orderitem.oxorderarticles__oxselvariant.value }}
+                                                <span class="amount"></span>
+                                                {% if oArticle.oxarticles__oxid.value and oArticle.isVisible() %}
+                                            </a>
+                                            {% endif %}
+                                            {% for sVar, aParam in orderitem.getPersParams() %}
+                                                {% if aParam %}
+                                                    <br>{{ translate({ ident: "DETAILS" }) }}: {{ aParam }}
+                                                {% endif %}
+                                            {% endfor %}
+                                        </li>
+                                    {% endfor %}
+                                </ol>
+                            {% endblock %}
+                        </div>
+                    </div>
+                {% endfor %}
+                {% include "widget/locator/listlocator.html.twig" with {locator: oView.getPageNavigation(), place: "bottom"} %}
+            {% else %}
+                {{ translate({ ident: "ORDER_EMPTY_HISTORY" }) }}
+            {% endif %}
+        {% endblock %}
+    </div>
+    {{ insert_tracker({title: template_title}) }}
+{% endcapture %}
+
+{% include "layout/page.html.twig" %}

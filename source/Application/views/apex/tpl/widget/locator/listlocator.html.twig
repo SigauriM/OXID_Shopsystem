@@ -1,0 +1,23 @@
+
+{% if place == "bottom" %}
+    <div class="row">
+        <div class="col">
+            {% include "widget/locator/paging.html.twig" with {pages: locator, place: place} %}
+        </div>
+    </div>
+{% else %}
+    <div class="d-md-flex w-100 mb-4 locator align-items-center">
+        {% include "widget/locator/attributes.html.twig" %}
+
+        {% if sort %}
+            {% include "widget/locator/sort.html.twig" %}
+        {% endif %}
+        {% if itemsPerPage %}
+            {% include "widget/locator/itemsperpage.html.twig" %}
+        {% endif %}
+        {% if listDisplayType %}
+            {% include "widget/locator/listdisplaytype.html.twig" %}
+        {% endif %}
+    </div>
+{% endif %}
+

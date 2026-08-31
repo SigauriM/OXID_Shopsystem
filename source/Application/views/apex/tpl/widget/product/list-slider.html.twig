@@ -1,0 +1,37 @@
+{% if not type %}
+    {% set type = "grid" %}
+{% endif %}
+
+{% if head %}
+    <div class="container-xxl">
+        <h2 class="h3">
+            {{ head }}
+        </h2>
+
+        {% if subhead %}
+            <p>{{ subhead }}</p>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if products and products|length > 0 %}
+    <div class="slider-container d-flex flex-nowrap" id="{{ listId }}">
+        {% for _product in products %}
+            {% set testid = listId ~ "_" ~ loop.index %}
+            {{ include_widget({ cl: "oxwArticleBox", _parent: oView.getClassKey(), nocookie: 1, _navurlparams: oViewConf.getNavUrlParams(), iLinkType: _product.getLinkType(), _object: _product, anid: _product.getId(), sWidgetType: "product", sListType: "listitem_" ~ type, iIndex: testid, blDisableToCart: blDisableToCart, isVatIncluded: oView.isVatIncluded(), showMainLink: showMainLink, recommid: recommid, owishid: owishid, toBasketFunction: toBasketFunction, removeFunction: removeFunction, altproduct: altproduct, inlist: _product.isInList(), skipESIforUser: 1, testid: testid, slider: true }) }}
+        {% endfor %}
+    </div>
+    <div class="slider-nav">
+        <button type="button" class="btn btn-secondary slide-left" aria-label="{{ translate({ ident: "MOVE_CAROUSEL_LEFT" }) }}{% if head %} - {{ head }}{% endif %}">
+            <svg aria-hidden="true">
+                <use xlink:href="#left"></use>
+            </svg>
+        </button>
+
+        <button type="button" class="btn btn-secondary slide-right" aria-label="{{ translate({ ident: "MOVE_CAROUSEL_RIGHT" }) }}{% if head %} - {{ head }}{% endif %}">
+            <svg aria-hidden="true">
+                <use xlink:href="#right"></use>
+            </svg>
+        </button>
+    </div>
+{% endif %}

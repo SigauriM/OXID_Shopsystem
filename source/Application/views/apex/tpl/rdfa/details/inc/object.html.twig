@@ -1,0 +1,71 @@
+<div rel="schema:itemOffered">
+    {% if oProduct.getVariants() or oView.drawParentUrl() %}
+        <div typeof="schema:ProductModel" about="{{ sRDFaUrl|raw }}#productdata">
+    {% else %}
+        <div typeof="schema:SomeProducts" about="{{ sRDFaUrl|raw }}#productdata">
+    {% endif %}
+              {% if oProduct.oxarticles__oxtitle.value %}
+                <div property="schema:name" content="{{ oProduct.oxarticles__oxtitle.value|striptags|trim }}" {% if oView.getActiveLangAbbr() %} xml:lang="{{ oView.getActiveLangAbbr() }}"{% endif %}></div>
+               {% endif %}
+               {% hasrights { ident: "SHOWLONGDESCRIPTION" } %}
+               {% set oLongdesc = oProduct.getLongDescription() %}
+               {% if oLongdesc.value %}
+                   <div property="schema:description" content="{{ oLongdesc.value|striptags|trim }}" {% if oView.getActiveLangAbbr() %} xml:lang="{{ oView.getActiveLangAbbr() }}"{% endif %}></div>
+               {% endif %}
+            {% endhasrights %}
+            <div rel="schema:image" resource="{{ oView.getActPicture() | raw }}"></div>
+            <div property="schema:sku" content="{{ oProduct.oxarticles__oxartnum.value }}" datatype="xsd:string"></div>
+            {% if oProduct.oxarticles__oxmpn.value %}
+                <div property="schema:mpn" content="{{ oProduct.oxarticles__oxmpn.value }}" datatype="xsd:string"></div>
+            {% endif %}
+            {% if oProduct.oxarticles__oxean.value %}
+                <div property="schema:gtin13" content="{{ oProduct.oxarticles__oxean.value }}" datatype="xsd:string"></div>
+            {% elseif oProduct.oxarticles__oxdistean.value %}
+                <div property="schema:gtin13" content="{{ oProduct.oxarticles__oxdistean.value }}" datatype="xsd:string"></div>
+            {% endif %}
+            {% if oView.getRDFaGenericCondition() %}
+                <div property="schema:itemCondition" content="{{ oView.getRDFaGenericCondition() }}" xml:lang="en"></div>
+            {% endif %}
+            {% for oCatPath in oView.getCatTreePath() %}
+                {% if loop.last %}
+                    <div property="schema:category" content="{{ oCatPath.oxcategories__oxtitle.value|striptags }}" {% if oView.getActiveLangAbbr() %} xml:lang="{{ oView.getActiveLangAbbr() }}"{% endif %}></div>
+                {% endif %}
+            {% endfor %}
+            {% if oProduct.oxarticles__oxlength.value %}
+                <div rel="schema:depth">
+                    <div typeof="schema:QuantitativeValue">
+                        <div property="schema:value" content="{{ oProduct.oxarticles__oxlength.value }}" datatype="xsd:float"></div>
+                        <div property="schema:unitCode" content="MTR" datatype="xsd:string"></div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if oProduct.oxarticles__oxwidth.value %}
+                <div rel="schema:width">
+                    <div typeof="schema:QuantitativeValue">
+                        <div property="schema:value" content="{{ oProduct.oxarticles__oxwidth.value }}" datatype="xsd:float"></div>
+                        <div property="schema:unitCode" content="MTR" datatype="xsd:string"></div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if oProduct.oxarticles__oxheight.value %}
+                <div rel="schema:height">
+                    <div typeof="schema:QuantitativeValue">
+                        <div property="schema:value" content="{{ oProduct.oxarticles__oxheight.value }}" datatype="xsd:float"></div>
+                        <div property="schema:unitCode" content="MTR" datatype="xsd:string"></div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if oProduct.oxarticles__oweight.value %}
+                <div rel="schema:weight">
+                    <div typeof="schema:QuantitativeValue">
+                        <div property="schema:value" content="{{ oProduct.oxarticles__oweight.value }}" datatype="xsd:float"></div>
+                        <div property="schema:unitCode" content="KGM" datatype="xsd:string"></div>
+                    </div>
+                </div>
+            {% endif %}
+            </div>
+        </div>
+        {% if oView.getBundleArticle() %}
+            {% set oBundleProduct = oView.getBundleArticle() %}
+            <div rel="schema:itemOffered" resource="{{ oBundleProduct.getLink()|raw }}#productdata"></div>
+        {% endif %}

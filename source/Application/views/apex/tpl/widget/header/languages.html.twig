@@ -1,0 +1,35 @@
+{% if oView.isLanguageLoaded() %}
+    {% if oxcmp_lang|length > 1 %}
+        <label>{{ translate({ ident: "LANGUAGE" }) }}</label>
+        <div class="btn-group w-100" role="group">
+            <button class="btn dropdown-toggle" type="button" aria-label="{{ translate({ ident: "LANGUAGE" }) }}" data-bs-toggle="dropdown" aria-expanded="false">
+                {% for _lng in oxcmp_lang %}
+                    {% if _lng.selected %}
+                        {{ _lng.name }}
+                    {% endif %}
+                {% endfor %}
+
+                <svg aria-hidden="true">
+                    <use xlink:href="#down"></use>
+                </svg>
+            </button>
+
+            <div class="dropdown-menu dropdown-menu-md-end">
+                {% block dd_layout_page_header_icon_menu_languages_list %}
+                    {% for _lng in oxcmp_lang %}
+                        {% set sLangImg = "lang/" ~ _lng.abbr ~ ".png" %}
+                        {% if _lng.selected %}
+                            {% capture name = "languageSelected" %}
+                                <a class="dropdown-item {{ _lng.abbr }}" title="{{ _lng.name }}" href="{{ _lng.link|add_url_parameters(oView.getDynUrlParams()) }}" hreflang="{{ _lng.abbr }}">
+                                    {{ _lng.name }}</a>
+                            {% endcapture %}
+                        {% endif %}
+                            <a class="dropdown-item{% if _lng.selected %} active{% endif %} {{ _lng.abbr }}" title="{{ _lng.name }}" href="{{ _lng.link|add_url_parameters(oView.getDynUrlParams()) }}" hreflang="{{ _lng.abbr }}">
+                                {{ _lng.name }}
+                            </a>
+                    {% endfor %}
+                {% endblock %}
+            </div>
+        </div>
+    {% endif %}
+{% endif %}

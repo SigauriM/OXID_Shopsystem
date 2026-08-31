@@ -1,0 +1,12 @@
+{{ script({ include: "js/movetonoticelist.min.js", dynamic: __oxid_include_dynamic }) }}
+
+{% set currency = oView.getActCurrency() %}
+
+<form name="basket{{ basketindex }}" id="basket_form" action="{{ oViewConf.getSelfActionLink()|raw }}" method="post">
+    {{ oViewConf.getHiddenSid()|raw }}
+    <input type="hidden" name="cl" value="basket">
+    <input type="hidden" name="fnc" value="changebasket">
+    <input type="hidden" name="CustomError" value="basket">
+
+    {% include "page/checkout/inc/basketcontents_list.html.twig" %}
+</form>

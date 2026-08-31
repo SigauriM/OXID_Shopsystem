@@ -1,0 +1,15 @@
+{
+    "name": "oxid-shipping/module",
+    "description": "OXID shipping module (stage 2 skeleton)",
+    "type": "oxideshop-module",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "oxid-shipping/engine": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "OxidShipping\\Module\\": "src/"
+        }
+    }
+}

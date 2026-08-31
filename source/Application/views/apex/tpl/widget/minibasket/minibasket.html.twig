@@ -1,0 +1,247 @@
+{% if oxcmp_basket.getProductsCount() >= 5 %}
+    {% set blScrollable = true %}
+{% endif %}
+
+{% block widget_minibasket %}
+
+        {% hasrights { ident: "TOBASKET" } %}
+            {% set currency = oView.getActCurrency() %}
+
+            <div class="modal fade basketFlyout modal-sidebar-right" id="basketModal" tabindex="-1" role="dialog" aria-labelledby="basketModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        {% block widget_minibasket_modal_header %}
+                        <div class="modal-header">
+                            <div class="h4 modal-title" id="basketModalLabel">{{ oxcmp_basket.getItemsCount() }} {{ translate({ ident: "ITEMS_IN_BASKET" }) }}</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal">
+                                <span aria-hidden="true"></span>
+                                <span class="visually-hidden-focusable">{{ translate({ ident: "CLOSE" }) }}</span>
+                            </button>
+                        </div>
+                        {% endblock %}
+                        {% if oxcmp_basket.getProductsCount() %}
+                            {% block widget_minibasket_modal_content %}
+                                <div class="modal-body">
+                                    {% if oxcmp_basket.getProductsCount() %}
+                                        {% hasrights { ident: "TOBASKET" } %}
+
+                                        {% for _product in oxcmp_basket.getContents() %}
+                                            {% block widget_minibasket_product %}{% endblock %}
+                                        {% endfor %}
+
+                                        {% block widget_minibasket_total %}{% endblock %}
+
+                                        {% block minibasket_top_functions %}
+                                            {% if oView.isLowOrderPrice() %}
+                                                {% block widget_minibasket_loworderprice_top %}
+                                                    <div class="alert alert-danger p-4">{{ translate({ ident: "MIN_ORDER_PRICE" }) }} {{ format_price(oxcmp_basket.getMinOrderPrice(), { currency: currency }) }}</div>
+                                                {% endblock %}
+                                            {% endif %}
+
+                                            {% set displayMiniBasketOrderButton = oViewConf.getViewThemeParam('miniBasketLowOrderDisplayOrderButton') %}
+                                            {% if not oView.isLowOrderPrice() or (displayMiniBasketOrderButton == 'show' or displayMiniBasketOrderButton == 'disabled') %}
+                                                {% if oxcmp_user %}
+                                                    <a href="{{ seo_url({ ident: oViewConf.getSelfLink() ~ "cl=payment" }) }}" class="btn btn-highlight btn-lg w-100 mb-2{% if oView.isLowOrderPrice() and displayMiniBasketOrderButton == 'disabled' %} disabled{% endif %}">{{ translate({ ident: "CHECKOUT" }) }}</a>
+                                                {% else %}
+                                                    <a href="{{ seo_url({ ident: oViewConf.getSelfLink() ~ "cl=user" }) }}" class="btn btn-highlight btn-lg w-100 mb-2{% if oView.isLowOrderPrice() and displayMiniBasketOrderButton == 'disabled' %} disabled{% endif %}">{{ translate({ ident: "CHECKOUT" }) }}</a>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endblock %}
+
+                                        <div class="minibasket-menu-box">
+                                            {% block dd_layout_page_header_icon_menu_minibasket_table %}
+                                                <div class="minibasket-items">
+                                                    {% for _product in oxcmp_basket.getContents() %}
+                                                        {% block widget_minibasket_product_item %}
+                                                            {% set basketItem = _product.getArticle() %}
+                                                            {% set minibasketItemTitle = _product.getTitle() %}
+                                                            <div class="my-1">
+                                                                <a class="minibasket-link" href="{{ _product.getLink()|raw }}" title="{{ minibasketItemTitle|striptags }}">
+                                                                <span>
+                                                                     <img loading="lazy" class="minibasket-img img-fluid" src="{{ _product.getIconUrl()|raw }}" alt="{{ minibasketItemTitle|striptags }}" width="40" height="40">
+                                                                </span>
+                                                                <span>
+                                                                    {{ _product.getAmount() }} x {{ minibasketItemTitle|striptags|raw }}<br>
+                                                                    {% if basketItem.getTPrice() %}
+                                                                        <del class="text-nowrap text-danger">{{ format_price(basketItem.getTPrice(), { currency: currency }) }}</del>
+                                                                    {% endif %}
+                                                                    {{ format_price(_product.getPrice(), { currency: currency }) }}<br>
+                                                                    {% if _product.getUnitPrice() %}
+                                                                        <small class="unit">{{ translate({ ident: "UNIT_PRICE" }) }}: {{ format_price(_product.getUnitPrice(), { currency: currency }) }}</small>
+                                                                    {% endif %}
+
+                                                                    {# Weight #}
+                                                                    {% if basketItem.oxarticles__oxweight.value %}
+                                                                        <br>
+                                                                        <small class="unit">
+                                                                            {{ translate({ ident: "WEIGHT", suffix: "COLON" }) }}
+
+                                                                            {% block widget_minibasket_product_weight %}
+                                                                                {{ basketItem.oxarticles__oxweight.value }} {{ translate({ ident: "KG" }) }}
+                                                                            {% endblock %}
+
+                                                                            {% hasrights { ident: "SHOWARTICLEPRICE" } %}
+                                                                                {% set oUnitPrice = basketItem.getUnitPrice() %}
+                                                                                {% block widget_minibasket_product_priceunit %}
+                                                                                    {% if oUnitPrice %}
+                                                                                        ({{ format_price(oUnitPrice, { currency: currency }) }}/{{ basketItem.getUnitName() }})
+                                                                                    {% endif %}
+                                                                                {% endblock %}
+                                                                            {% endhasrights %}
+                                                                        </small>
+                                                                    {% endif %}
+                                                                </span>
+                                                                </a>
+                                                            </div>
+                                                        {% endblock %}
+                                                    {% endfor %}
+                                                </div>
+
+                                                {% block widget_minibasket_totalgross %}
+                                                {# Product total bruto price #}
+                                                <div class="row my-2">
+                                                    <div class="col-8">{{ translate({ ident: "TOTAL_GROSS" }) }}</div>
+                                                    <div class="col-4 text-end">
+                                                        {{ format_price(oxcmp_basket.getBruttoSum(), { currency: currency }) }}
+                                                    </div>
+                                                </div>
+                                                {% endblock %}
+
+                                                {% block widget_minibasket_discounts %}
+                                                {# Discount #}
+                                                {% for oDiscount in oxcmp_basket.getDiscounts() %}
+                                                <div class="row my-2">
+                                                    <div class="col-8">
+                                                        <b>
+                                                            {% if oDiscount.dDiscount < 0 %}{{ translate({ ident: "SURCHARGE" }) }}{% else %}{{ translate({ ident: "DISCOUNT" }) }}{% endif %}
+                                                        </b>
+                                                        ({{ oDiscount.sDiscount }})
+                                                    </div>
+                                                    <div class="col-4 text-end">
+                                                        {% if oDiscount.dDiscount > 0 %}-{% endif %}
+                                                        {{ format_price(oDiscount.dDiscount, { currency: currency }) }}
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                                {% endblock %}
+
+                                                {% block widget_minibasket_voucherdiscount %}
+                                                {# Vouchers #}
+                                                {% if oViewConf.getShowVouchers() and oxcmp_basket.getVouchers() %}
+                                                {% for key, sVoucher in oxcmp_basket.getVouchers() %}
+                                                <div class="row my-2">
+                                                    <div class="col-8">{{ translate({ ident: "COUPON" }) }}&nbsp;({{ sVoucher.sVoucherNr }})</div>
+                                                    <div class="col-4 text-end">
+                                                        <span class="text-danger">{% if sVoucher.dVoucherdiscount > 0 %}-{% endif %}{{ format_price(sVoucher.dVoucherdiscount, { currency: currency }) }}</span>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                                {% endif %}
+                                                {% endblock %}
+
+                                                {% block widget_minibasket_deliverycosts %}
+                                                {# Shipping cost #}
+                                                {% set deliveryCost = oxcmp_basket.getDeliveryCost() %}
+                                                {% if deliveryCost and (oxcmp_basket.getBasketUser() or oViewConf.isFunctionalityEnabled('blCalculateDelCostIfNotLoggedIn') ) %}
+                                                <div class="row my-2">
+                                                    <div class="col-8">{{ translate({ ident: "SHIPPING_COST" }) }}</div>
+                                                    <div class="col-4 text-end">
+                                                        {{ format_price(deliveryCost.getBruttoPrice(), { currency: currency }) }}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% endblock %}
+
+                                                {% block widget_minibasket_paymentcosts %}
+                                                {# Payment cost #}
+                                                {% set paymentCost = oxcmp_basket.getPaymentCost() %}
+                                                {% if paymentCost and paymentCost.getPrice() %}
+                                                <div class="row my-2">
+                                                    <div class="col-8">{% if paymentCost.getPrice() >= 0 %}{{ translate({ ident: "SURCHARGE" }) }}{% else %}{{ translate({ ident: "DEDUCTION" }) }}{% endif %} {{ translate({ ident: "PAYMENT_METHOD" }) }}</div>
+                                                    <div class="col-4 text-end">
+                                                        {{ format_price(paymentCost.getBruttoPrice(), { currency: currency }) }}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% endblock %}
+
+                                                {% block widget_minibasket_wrappingcostsa %}
+                                                {# Wrapping cost #}
+                                                {% set wrappingCost = oxcmp_basket.getWrappingCost() %}
+                                                {% if wrappingCost and wrappingCost.getPrice() > 0 %}
+                                                <div class="row my-2">
+                                                    <div class="col-8">{{ translate({ ident: "GIFT_WRAPPING" }) }}</div>
+                                                    <div class="col-4 text-end">
+                                                        {{ format_price(wrappingCost.getBruttoPrice(), { currency: currency }) }}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% endblock %}
+
+                                                {% block widget_minibasket_giftcardcosts %}
+                                                {# Gift card cost #}
+                                                {% set giftCardCost = oxcmp_basket.getGiftCardCost() %}
+                                                {% if giftCardCost and giftCardCost.getPrice() > 0 %}
+                                                <div class="row my-2">
+                                                    <div class="col-8">{{ translate({ ident: "GREETING_CARD" }) }}</div>
+                                                    <div class="col-4 text-end">
+                                                        {{ format_price(giftCardCost.getBruttoPrice(), { currency: currency }) }}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% endblock %}
+
+                                                {% block widget_minibasket_grand_total %}
+                                                <div class="row minibasket-total-row my-3">
+                                                    <div class="col-8 minibasket-total-col h5">
+                                                        {{ translate({ ident: "GRAND_TOTAL" }) }}
+                                                    </div>
+                                                    <div class="col-4 minibasket-total-col text-end h5">
+                                                        {{ format_price(oxcmp_basket.getPrice(), { currency: currency }) }}
+                                                    </div>
+                                                </div>
+                                                {% endblock %}
+
+                                                {% block widget_minibasket_menu_total %}{% endblock %}
+                                            {% endblock %}
+                                        </div>
+
+                                        {% include "widget/minibasket/countdown.html.twig" %}
+
+                                        <div class="bottom">
+                                            <div class="mb-2 charges">
+                                            {% if oxcmp_basket.getBasketUser() or oViewConf.isFunctionalityEnabled('blCalculateDelCostIfNotLoggedIn') %}
+                                                {{ translate({ ident: "SHIPPING_PAYMENT_COST_CALCULATE_AT_CHECKOUT" }) }}
+                                            {% else %}
+                                                {{ translate({ ident: "SHIPPING_PAYMENT_COST_CANNOT_CALCULATE" }) }}
+                                            {% endif %}
+                                            </div>
+
+                                        {% block dd_layout_page_header_icon_menu_minibasket_functions %}
+                                        <a href="{{ seo_url({ ident: oViewConf.getSelfLink() ~ "cl=basket" }) }}" class="btn btn-outline-primary w-100">{{ translate({ ident: "DISPLAY_BASKET" }) }}</a>
+                                        {% endblock %}
+                                        </div>
+
+                                        {% endhasrights %}
+                                    {% endif %}
+                                </div>
+                            {% endblock %}
+                        {% else %}
+                            {% block dd_layout_page_header_icon_menu_minibasket_alert_empty %}
+                                <div class="p-3 text-center">
+                                    <div class="emoji h1"> 🤷‍♂️</div>
+                                    {{ translate({ ident: "BASKET_EMPTY" }) }}
+                                </div>
+                            {% endblock %}
+                        {% endif %}
+                        {% block widget_minibasket_modal_footer %}
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
+            {% if _prefix == 'modal' %}
+                {{ script({ add: "var basketModal = new bootstrap.Modal(document.getElementById('basketModal')); basketModal.show()", dynamic: __oxid_include_dynamic }) }}
+            {% endif %}
+        {% endhasrights %}
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% include "headitem.html.twig" with {title: "GENERAL_ADMIN_TITLE"|translate} %}
+
+{% if readonly %}
+    {% set readonly = "readonly disabled" %}
+{% else %}
+    {% set readonly = "" %}
+{% endif %}
+
+<ul class="req">
+    <h3>{{ translate({ ident: "SYSREQ_DESCRIPTION_REQ" }) }}:</h3>
+    {% for sGroupName, aModules in aInfo %}
+    <li class='group'>{{ translate({ ident: "SYSREQ_"|cat(sGroupName)|upper }) }}
+        {% for sModule, iModuleState in aModules %}
+            <ul>
+                {% set class = oView.getModuleClass(iModuleState) %}
+                <li id="{{ sModule }}" class="{{ class }}"><a href={{ oView.getReqInfoUrl(sModule)|raw }} target="_blank">{{ translate({ ident: "SYSREQ_"|cat(sModule)|upper }) }}</a></li>
+            </ul>
+        {% endfor %}
+    </li>
+    {% endfor %}
+    <li class="clear"></li>
+</ul>
+
+{% if aCollations %}
+    <ul class="req">
+        <h3>{{ translate({ ident: "SYSREQ_DESCRIPTION_COLL" }) }}:</h3>
+        {% for sTable, aColumns in aCollations %}
+        <li class="coll">{{ sTable }}
+            {% for sColumn, sCollation in aColumns %}
+                <ul>
+                    <li id="{{ sColumn }}" class="fail">{{ sColumn }} - {{ sCollation }}</li>
+                </ul>
+            {% endfor %}
+        </li>
+        {% endfor %}
+        <li class="clear"></li>
+    </ul>
+{% endif %}
+
+<ul class="req">
+    <li class="pass"> - {{ translate({ ident: "SYSREQ_DESCRIPTION_PASS" }) }}</li>
+    <li class="pmin"> - {{ translate({ ident: "SYSREQ_DESCRIPTION_PMIN" }) }}</li>
+    <li class="fail"> - {{ translate({ ident: "SYSREQ_DESCRIPTION_FAIL" }) }}</li>
+    <li class="null"> - {{ translate({ ident: "SYSREQ_DESCRIPTION_NULL" }) }}</li>
+</ul>
+
+{% include "bottomnaviitem.html.twig" %}
+{% include "bottomitem.html.twig" %}
