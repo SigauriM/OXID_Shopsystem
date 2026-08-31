@@ -7,8 +7,9 @@ namespace OxidShipping\Engine\Result;
 use OxidShipping\Engine\Classification\ClassifiedPiece;
 use OxidShipping\Engine\Domain\KnownZone;
 use OxidShipping\Engine\Domain\Rejected;
-use OxidShipping\Engine\Grouping\Shipment;
 use OxidShipping\Engine\Measurement\MeasuredPiece;
+use OxidShipping\Engine\Tariff\PricedShipment;
+use OxidShipping\Engine\Tariff\PriceLine;
 
 final readonly class Quote implements QuoteResult
 {
@@ -16,7 +17,7 @@ final readonly class Quote implements QuoteResult
      * @param list<MeasuredPiece> $pieces
      * @param list<PieceRejection> $rejections
      * @param list<ClassifiedPiece> $classified
-     * @param list<Shipment> $shipments
+     * @param list<PricedShipment> $shipments
      */
     public static function fromPipeline(
         array $pieces,
@@ -26,7 +27,14 @@ final readonly class Quote implements QuoteResult
         array $shipments,
         InputSnapshot $snapshot,
         string $configVersion,
+        string $configHash,
     ): self {
+        if (preg_match('/^[a-f0-9]{64}$/', $configHash) !== 1) {
+            throw new \InvalidArgumentException(
+                'Config hash must be 64 lowercase hexadecimal characters.',
+            );
+        }
+
         $pieceByCoordinate = [];
         foreach ($pieces as $piece) {
             $key = $piece->lineIndex . "\0" . $piece->pieceIndex;
@@ -113,7 +121,8 @@ final readonly class Quote implements QuoteResult
 
             $assigned = [];
             $shipmentKeys = [];
-            foreach ($shipments as $shipment) {
+            foreach ($shipments as $priced) {
+                $shipment = $priced->shipment;
                 $shipmentKey = $shipment->class->value . "\0" . $shipment->zoneId . "\0" . ($shipment->indoor ? '1' : '0');
                 if (isset($shipmentKeys[$shipmentKey])) {
                     throw new \InvalidArgumentException('Duplicate shipment key.');
@@ -131,6 +140,16 @@ final readonly class Quote implements QuoteResult
                     if ($classifiedItem->piece->lineId !== $item->piece->lineId) {
                         throw new \InvalidArgumentException(
                             'Shipment piece lineId does not match the classified piece.',
+                        );
+                    }
+                    if ($classifiedItem->class !== $item->class) {
+                        throw new \InvalidArgumentException(
+                            'Shipment piece class does not match the classified piece.',
+                        );
+                    }
+                    if ($classifiedItem->piece->billableGrams !== $item->piece->billableGrams) {
+                        throw new \InvalidArgumentException(
+                            'Shipment piece billableGrams does not match the classified piece.',
                         );
                     }
                     if (isset($assigned[$key])) {
@@ -167,24 +186,49 @@ final readonly class Quote implements QuoteResult
         $sortedShipments = $shipments;
         usort(
             $sortedShipments,
-            static fn (Shipment $a, Shipment $b): int => [$a->class->rank(), $a->zoneId, $a->indoor]
-                <=> [$b->class->rank(), $b->zoneId, $b->indoor],
+            static fn (PricedShipment $a, PricedShipment $b): int => [
+                $a->shipment->class->rank(),
+                $a->shipment->zoneId,
+                $a->shipment->indoor,
+            ] <=> [
+                $b->shipment->class->rank(),
+                $b->shipment->zoneId,
+                $b->shipment->indoor,
+            ],
         );
+
+        $totalCents = 0;
+        $trace = [];
+        foreach ($sortedShipments as $priced) {
+            $lineSum = 0;
+            foreach ($priced->lines as $line) {
+                $lineSum += $line->deltaCents;
+                $trace[] = $line;
+            }
+            if ($lineSum !== $priced->totalCents) {
+                throw new \InvalidArgumentException('Priced shipment lines must sum to totalCents.');
+            }
+            $totalCents += $priced->totalCents;
+        }
 
         return new self(
             $destination,
             $sortedRejections,
             $sortedClassified,
             $sortedShipments,
+            $totalCents,
+            $trace,
             $snapshot,
             $configVersion,
+            $configHash,
         );
     }
 
     /**
      * @param list<PieceRejection> $rejections
      * @param list<ClassifiedPiece> $classified
-     * @param list<Shipment> $shipments
+     * @param list<PricedShipment> $shipments
+     * @param list<PriceLine> $trace
      */
     private function __construct(
         /** Request-level address decision, not a piece outcome. */
@@ -192,10 +236,14 @@ final readonly class Quote implements QuoteResult
         public array $rejections,
         /** Class after the order-weight rule, not after piece classification alone. */
         public array $classified,
-        /** One shipment = one stop. Key is (class, zoneId, indoor). */
+        /** Priced stop; inner key is still (class, zoneId, indoor). */
         public array $shipments,
+        /** Sum of priced shipments; rejections add 0. */
+        public int $totalCents,
+        public array $trace,
         public InputSnapshot $snapshot,
         public string $configVersion,
+        public string $configHash,
     ) {
     }
 }

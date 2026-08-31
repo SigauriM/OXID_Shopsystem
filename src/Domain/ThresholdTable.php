@@ -45,7 +45,15 @@ final readonly class ThresholdTable
             $previousRank = $rank;
         }
 
-        return new self($entries);
+        return new self(array_values($byAbove));
+    }
+
+    /**
+     * @return list<ClassFloor>
+     */
+    public function floors(): array
+    {
+        return $this->floors;
     }
 
     public function floor(int $measurement): ?ShippingClass

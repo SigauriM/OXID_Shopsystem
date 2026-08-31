@@ -113,6 +113,8 @@ final class QuoteEngineOrderRuleTest extends TestCase
         $this->assertSame(RejectReason::ZoneForbidden, $quote->destination->reason);
         $this->assertSame([], $quote->classified);
         $this->assertSame([], $quote->shipments);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
     }
 
     public function testUnservedCountryWithTwoHeavyPiecesHasNoClassifiedPieces(): void
@@ -127,6 +129,8 @@ final class QuoteEngineOrderRuleTest extends TestCase
         $this->assertSame(RejectReason::CountryNotServed, $quote->destination->reason);
         $this->assertSame([], $quote->classified);
         $this->assertSame([], $quote->shipments);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
     }
 
     public function testUnknownZoneWithTwoHeavyPiecesHasNoClassifiedPieces(): void
@@ -141,6 +145,8 @@ final class QuoteEngineOrderRuleTest extends TestCase
         $this->assertSame(RejectReason::UnknownZone, $quote->destination->reason);
         $this->assertSame([], $quote->classified);
         $this->assertSame([], $quote->shipments);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
     }
 
     public function testIndoorFlagDoesNotChangeOrderWeightClass(): void

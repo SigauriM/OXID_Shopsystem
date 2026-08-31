@@ -16,6 +16,7 @@ use OxidShipping\Engine\Domain\ZoneDirectory;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Input\QuoteRequest;
 use OxidShipping\Engine\Input\TariffConfig;
+use OxidShipping\Engine\Input\TariffDocument;
 use OxidShipping\Engine\QuoteEngine;
 use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\ShippingClass;
@@ -40,6 +41,7 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertSame([], $result->rejections);
         $this->assertCount(1, $result->classified);
         $this->assertSame(ShippingClass::Paket, $result->classified[0]->class);
+        $this->assertSame(TariffDocument::hash(TestConfig::tariff()), $result->configHash);
     }
 
     public function testUnknownGermanPostalIsUnknownZoneNotKnown(): void
@@ -50,6 +52,10 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertSame(RejectReason::UnknownZone, $result->destination->reason);
         $this->assertSame([], $result->classified);
         $this->assertSame([], $result->shipments);
+        $this->assertSame(0, $result->totalCents);
+        $this->assertSame([], $result->trace);
+        $this->assertSame(TariffDocument::hash(TestConfig::tariff()), $result->configHash);
+        $this->assertSame(1, preg_match('/^[a-f0-9]{64}$/', $result->configHash));
     }
 
     public function testSwitzerlandWithUnknownPostalIsCountryNotServedNotValidationFailed(): void
@@ -60,6 +66,9 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertSame(RejectReason::CountryNotServed, $result->destination->reason);
         $this->assertSame([], $result->classified);
         $this->assertSame([], $result->shipments);
+        $this->assertSame(0, $result->totalCents);
+        $this->assertSame([], $result->trace);
+        $this->assertSame(TariffDocument::hash(TestConfig::tariff()), $result->configHash);
     }
 
     public function testForbiddenGermanPostalIsZoneForbidden(): void
@@ -70,6 +79,9 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertSame(RejectReason::ZoneForbidden, $result->destination->reason);
         $this->assertSame([], $result->classified);
         $this->assertSame([], $result->shipments);
+        $this->assertSame(0, $result->totalCents);
+        $this->assertSame([], $result->trace);
+        $this->assertSame(TariffDocument::hash(TestConfig::tariff()), $result->configHash);
     }
 
     public function testGermanFourDigitPostalMatchingViennaIsUnknownZone(): void
@@ -80,6 +92,8 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertSame(RejectReason::UnknownZone, $result->destination->reason);
         $this->assertSame([], $result->classified);
         $this->assertSame([], $result->shipments);
+        $this->assertSame(0, $result->totalCents);
+        $this->assertSame([], $result->trace);
     }
 
     public function testShortGermanPostalOnRequestIsUnknownZone(): void
@@ -90,6 +104,8 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertSame(RejectReason::UnknownZone, $result->destination->reason);
         $this->assertSame([], $result->classified);
         $this->assertSame([], $result->shipments);
+        $this->assertSame(0, $result->totalCents);
+        $this->assertSame([], $result->trace);
     }
 
     public function testAddressRejectExpandsToEveryPiece(): void
@@ -109,6 +125,8 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertCount(4, $result->rejections);
         $this->assertSame([], $result->classified);
         $this->assertSame([], $result->shipments);
+        $this->assertSame(0, $result->totalCents);
+        $this->assertSame([], $result->trace);
         $this->assertSame(
             [[0, 0], [0, 1], [1, 0], [1, 1]],
             array_map(
@@ -135,6 +153,7 @@ final class QuoteEngineZoneTest extends TestCase
             ),
             TestConfig::classification(),
             TestConfig::orderWeightThreshold(),
+            TestConfig::rates([]),
         );
 
         $result = $this->engine->quote(new QuoteRequest(
@@ -150,6 +169,8 @@ final class QuoteEngineZoneTest extends TestCase
         $this->assertSame(RejectReason::UnknownZone, $result->destination->reason);
         $this->assertSame([], $result->classified);
         $this->assertSame([], $result->shipments);
+        $this->assertSame(0, $result->totalCents);
+        $this->assertSame([], $result->trace);
     }
 
     private function quote(string $postalCode, string $country): Quote

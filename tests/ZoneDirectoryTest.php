@@ -59,6 +59,28 @@ final class ZoneDirectoryTest extends TestCase
         $this->assertSame(['AT', 'DE'], $directory->countries());
     }
 
+    public function testPostalEntriesAreSortedByCountryThenPostalCode(): void
+    {
+        $directory = ZoneDirectory::fromEntries(
+            [
+                new ZoneDefinition('de-hh', false),
+                new ZoneDefinition('de-01', false),
+                new ZoneDefinition('at-w', false),
+            ],
+            [
+                new PostalZoneEntry('DE', '20095', 'de-hh'),
+                new PostalZoneEntry('DE', '01067', 'de-01'),
+                new PostalZoneEntry('AT', '1010', 'at-w'),
+            ],
+        );
+
+        $keys = array_map(
+            static fn (PostalZoneEntry $entry): string => $entry->country . ':' . $entry->postalCode,
+            $directory->postalEntries(),
+        );
+        $this->assertSame(['AT:1010', 'DE:01067', 'DE:20095'], $keys);
+    }
+
     public function testDuplicatePostalEntryIsProgrammerError(): void
     {
         $this->expectException(\InvalidArgumentException::class);

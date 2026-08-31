@@ -55,6 +55,19 @@ final readonly class ZoneDirectory
         return new KnownZone($zoneId);
     }
 
+    public function has(string $zoneId): bool
+    {
+        return isset($this->definitionsById[$zoneId]);
+    }
+
+    /**
+     * @return list<ZoneDefinition>
+     */
+    public function definitions(): array
+    {
+        return array_values($this->definitionsById);
+    }
+
     /**
      * Guaranteed present by fromEntries.
      */
@@ -82,5 +95,25 @@ final readonly class ZoneDirectory
         sort($list, SORT_STRING);
 
         return $list;
+    }
+
+    /**
+     * @return list<PostalZoneEntry>
+     */
+    public function postalEntries(): array
+    {
+        $entries = [];
+        foreach ($this->entriesByKey as $key => $zoneId) {
+            [$country, $postalCode] = explode("\0", $key, 2);
+            $entries[] = new PostalZoneEntry($country, $postalCode, $zoneId);
+        }
+
+        usort(
+            $entries,
+            static fn (PostalZoneEntry $a, PostalZoneEntry $b): int => [$a->country, $a->postalCode]
+                <=> [$b->country, $b->postalCode],
+        );
+
+        return $entries;
     }
 }

@@ -7,12 +7,13 @@ namespace OxidShipping\Engine\Tests;
 use OxidShipping\Engine\Domain\KnownZone;
 use OxidShipping\Engine\Domain\Rejected;
 use OxidShipping\Engine\Domain\RejectReason;
-use OxidShipping\Engine\Grouping\Shipment;
 use OxidShipping\Engine\Input\OrderLine;
 use OxidShipping\Engine\Input\QuoteRequest;
 use OxidShipping\Engine\QuoteEngine;
 use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\ShippingClass;
+use OxidShipping\Engine\Tariff\PricedShipment;
+use OxidShipping\Engine\Tariff\PriceRuleId;
 use OxidShipping\Engine\Tests\Support\TestConfig;
 use PHPUnit\Framework\TestCase;
 
@@ -33,10 +34,10 @@ final class QuoteEngineGroupingTest extends TestCase
         $this->assertSame('de-01', $quote->destination->zoneId);
         $this->assertSame([], $quote->rejections);
         $this->assertCount(1, $quote->shipments);
-        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->class);
-        $this->assertSame('de-01', $quote->shipments[0]->zoneId);
-        $this->assertFalse($quote->shipments[0]->indoor);
-        $this->assertCount(1, $quote->shipments[0]->pieces);
+        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->shipment->class);
+        $this->assertSame('de-01', $quote->shipments[0]->shipment->zoneId);
+        $this->assertFalse($quote->shipments[0]->shipment->indoor);
+        $this->assertCount(1, $quote->shipments[0]->shipment->pieces);
     }
 
     public function testQuantityThreeIsOneShipmentWithThreePieces(): void
@@ -44,7 +45,7 @@ final class QuoteEngineGroupingTest extends TestCase
         $quote = $this->quoteLine(100, 100, 100, 1, 3);
 
         $this->assertCount(1, $quote->shipments);
-        $this->assertCount(3, $quote->shipments[0]->pieces);
+        $this->assertCount(3, $quote->shipments[0]->shipment->pieces);
         $this->assertSame(
             [[0, 0], [0, 1], [0, 2]],
             $this->coordinates($quote->shipments[0]),
@@ -57,9 +58,14 @@ final class QuoteEngineGroupingTest extends TestCase
 
         $this->assertCount(2, $quote->classified);
         $this->assertCount(1, $quote->shipments);
-        $this->assertCount(2, $quote->shipments[0]->pieces);
-        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->class);
-        $this->assertNotSame(ShippingClass::Spedition, $quote->shipments[0]->class);
+        $this->assertCount(2, $quote->shipments[0]->shipment->pieces);
+        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->shipment->class);
+        $this->assertNotSame(ShippingClass::Spedition, $quote->shipments[0]->shipment->class);
+        $this->assertSame(1200, $quote->totalCents);
+        $this->assertSame(1200, $quote->shipments[0]->baseCents);
+        foreach ($quote->trace as $line) {
+            $this->assertNotSame(PriceRuleId::Indoor, $line->ruleId);
+        }
     }
 
     public function testOneLongAndThreeShortAreTwoShipmentsPaketThenSperrgut(): void
@@ -70,14 +76,14 @@ final class QuoteEngineGroupingTest extends TestCase
         ]);
 
         $this->assertCount(2, $quote->shipments);
-        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->class);
-        $this->assertCount(3, $quote->shipments[0]->pieces);
-        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[1]->class);
-        $this->assertCount(1, $quote->shipments[1]->pieces);
-        $this->assertSame('de-01', $quote->shipments[0]->zoneId);
-        $this->assertSame('de-01', $quote->shipments[1]->zoneId);
-        $this->assertFalse($quote->shipments[0]->indoor);
-        $this->assertFalse($quote->shipments[1]->indoor);
+        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->shipment->class);
+        $this->assertCount(3, $quote->shipments[0]->shipment->pieces);
+        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[1]->shipment->class);
+        $this->assertCount(1, $quote->shipments[1]->shipment->pieces);
+        $this->assertSame('de-01', $quote->shipments[0]->shipment->zoneId);
+        $this->assertSame('de-01', $quote->shipments[1]->shipment->zoneId);
+        $this->assertFalse($quote->shipments[0]->shipment->indoor);
+        $this->assertFalse($quote->shipments[1]->shipment->indoor);
         $this->assertSame(
             2001,
             $quote->classified[1]->piece->dimensions->lengthMm
@@ -94,10 +100,10 @@ final class QuoteEngineGroupingTest extends TestCase
         ]);
 
         $this->assertCount(1, $quote->shipments);
-        $this->assertCount(2, $quote->shipments[0]->pieces);
+        $this->assertCount(2, $quote->shipments[0]->shipment->pieces);
         $this->assertNotSame(
-            $quote->shipments[0]->pieces[0]->piece->billableGrams,
-            $quote->shipments[0]->pieces[1]->piece->billableGrams,
+            $quote->shipments[0]->shipment->pieces[0]->piece->billableGrams,
+            $quote->shipments[0]->shipment->pieces[1]->piece->billableGrams,
         );
     }
 
@@ -110,8 +116,8 @@ final class QuoteEngineGroupingTest extends TestCase
 
         $this->assertNotSame($quote->classified[0]->piece->lineId, $quote->classified[1]->piece->lineId);
         $this->assertCount(1, $quote->shipments);
-        $this->assertCount(2, $quote->shipments[0]->pieces);
-        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->class);
+        $this->assertCount(2, $quote->shipments[0]->shipment->pieces);
+        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->shipment->class);
     }
 
     public function testTwoTwentyKilogramCubesAreOneSpeditionShipmentAfterOverride(): void
@@ -119,8 +125,8 @@ final class QuoteEngineGroupingTest extends TestCase
         $quote = $this->quoteLine(100, 100, 100, 20000, 2);
 
         $this->assertCount(1, $quote->shipments);
-        $this->assertSame(ShippingClass::Spedition, $quote->shipments[0]->class);
-        $this->assertCount(2, $quote->shipments[0]->pieces);
+        $this->assertSame(ShippingClass::Spedition, $quote->shipments[0]->shipment->class);
+        $this->assertCount(2, $quote->shipments[0]->shipment->pieces);
         $this->assertSame(ShippingClass::Spedition, $quote->classified[0]->class);
         $this->assertSame(ShippingClass::Spedition, $quote->classified[1]->class);
     }
@@ -133,8 +139,8 @@ final class QuoteEngineGroupingTest extends TestCase
         ]);
 
         $this->assertCount(1, $quote->shipments);
-        $this->assertSame(ShippingClass::Spedition, $quote->shipments[0]->class);
-        $this->assertCount(3, $quote->shipments[0]->pieces);
+        $this->assertSame(ShippingClass::Spedition, $quote->shipments[0]->shipment->class);
+        $this->assertCount(3, $quote->shipments[0]->shipment->pieces);
     }
 
     public function testIndoorFlagOnTwoHeavyCubesIsCopiedOntoTheSingleShipment(): void
@@ -150,10 +156,10 @@ final class QuoteEngineGroupingTest extends TestCase
 
         $this->assertCount(1, $curb->shipments);
         $this->assertCount(1, $indoor->shipments);
-        $this->assertFalse($curb->shipments[0]->indoor);
-        $this->assertTrue($indoor->shipments[0]->indoor);
-        $this->assertSame(ShippingClass::Spedition, $curb->shipments[0]->class);
-        $this->assertSame(ShippingClass::Spedition, $indoor->shipments[0]->class);
+        $this->assertFalse($curb->shipments[0]->shipment->indoor);
+        $this->assertTrue($indoor->shipments[0]->shipment->indoor);
+        $this->assertSame(ShippingClass::Spedition, $curb->shipments[0]->shipment->class);
+        $this->assertSame(ShippingClass::Spedition, $indoor->shipments[0]->shipment->class);
     }
 
     public function testSameCubeInAustriaAndGermanyPutsZoneIdOnTheShipmentKey(): void
@@ -171,8 +177,8 @@ final class QuoteEngineGroupingTest extends TestCase
 
         $this->assertCount(1, $austria->shipments);
         $this->assertCount(1, $germany->shipments);
-        $this->assertSame('at-w', $austria->shipments[0]->zoneId);
-        $this->assertSame('de-01', $germany->shipments[0]->zoneId);
+        $this->assertSame('at-w', $austria->shipments[0]->shipment->zoneId);
+        $this->assertSame('de-01', $germany->shipments[0]->shipment->zoneId);
     }
 
     public function testSperrgutLineBeforePaketStillShipsPaketFirst(): void
@@ -182,8 +188,8 @@ final class QuoteEngineGroupingTest extends TestCase
             new OrderLine('cube', 100, 100, 100, 1, 1),
         ]);
 
-        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->class);
-        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[1]->class);
+        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->shipment->class);
+        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[1]->shipment->class);
     }
 
     public function testSperrgutAndGirthSpeditionSortByRankNotBacking(): void
@@ -201,8 +207,8 @@ final class QuoteEngineGroupingTest extends TestCase
             $quote->classified[0]->piece->actualGrams + $quote->classified[1]->piece->actualGrams,
         );
         $this->assertCount(2, $quote->shipments);
-        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[0]->class);
-        $this->assertSame(ShippingClass::Spedition, $quote->shipments[1]->class);
+        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[0]->shipment->class);
+        $this->assertSame(ShippingClass::Spedition, $quote->shipments[1]->shipment->class);
     }
 
     public function testForbiddenZoneHasNoShipments(): void
@@ -217,6 +223,8 @@ final class QuoteEngineGroupingTest extends TestCase
         $this->assertSame(RejectReason::ZoneForbidden, $quote->destination->reason);
         $this->assertSame([], $quote->shipments);
         $this->assertSame([], $quote->classified);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
         $this->assertSame(
             [[0, 0], [0, 1]],
             array_map(
@@ -237,6 +245,8 @@ final class QuoteEngineGroupingTest extends TestCase
         $this->assertInstanceOf(Rejected::class, $quote->destination);
         $this->assertSame(RejectReason::CountryNotServed, $quote->destination->reason);
         $this->assertSame([], $quote->shipments);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
     }
 
     public function testUnknownZoneHasNoShipments(): void
@@ -250,6 +260,8 @@ final class QuoteEngineGroupingTest extends TestCase
         $this->assertInstanceOf(Rejected::class, $quote->destination);
         $this->assertSame(RejectReason::UnknownZone, $quote->destination->reason);
         $this->assertSame([], $quote->shipments);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
     }
 
     public function testTwoQuotesOfOneLongAndThreeShortYieldTheSameShipmentKeysAndCoordinates(): void
@@ -304,14 +316,14 @@ final class QuoteEngineGroupingTest extends TestCase
     }
 
     /**
-     * @param list<Shipment> $shipments
+     * @param list<PricedShipment> $shipments
      * @return list<array{0: ShippingClass, 1: string, 2: bool}>
      */
     private function keys(array $shipments): array
     {
         $keys = [];
-        foreach ($shipments as $shipment) {
-            $keys[] = [$shipment->class, $shipment->zoneId, $shipment->indoor];
+        foreach ($shipments as $priced) {
+            $keys[] = [$priced->shipment->class, $priced->shipment->zoneId, $priced->shipment->indoor];
         }
 
         return $keys;
@@ -320,10 +332,10 @@ final class QuoteEngineGroupingTest extends TestCase
     /**
      * @return list<array{0: int, 1: int}>
      */
-    private function coordinates(Shipment $shipment): array
+    private function coordinates(PricedShipment $priced): array
     {
         $coordinates = [];
-        foreach ($shipment->pieces as $item) {
+        foreach ($priced->shipment->pieces as $item) {
             $coordinates[] = [$item->piece->lineIndex, $item->piece->pieceIndex];
         }
 

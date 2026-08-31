@@ -10,6 +10,7 @@ use OxidShipping\Engine\QuoteEngine;
 use OxidShipping\Engine\Tests\Support\TestConfig;
 use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\ShippingClass;
+use OxidShipping\Engine\Tariff\PriceRuleId;
 use PHPUnit\Framework\TestCase;
 
 final class QuoteEngineMeasurementTest extends TestCase
@@ -33,10 +34,17 @@ final class QuoteEngineMeasurementTest extends TestCase
         $this->assertSame(ShippingClass::Paket, $quote->classified[1]->class);
         $this->assertSame(ShippingClass::Paket, $quote->classified[2]->class);
         $this->assertCount(1, $quote->shipments);
-        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->class);
-        $this->assertSame('de-01', $quote->shipments[0]->zoneId);
-        $this->assertFalse($quote->shipments[0]->indoor);
-        $this->assertCount(3, $quote->shipments[0]->pieces);
+        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->shipment->class);
+        $this->assertSame('de-01', $quote->shipments[0]->shipment->zoneId);
+        $this->assertFalse($quote->shipments[0]->shipment->indoor);
+        $this->assertCount(3, $quote->shipments[0]->shipment->pieces);
+        $this->assertCount(3, $quote->trace);
+        $this->assertSame(PriceRuleId::Base, $quote->trace[0]->ruleId);
+        $this->assertSame(PriceRuleId::Base, $quote->trace[1]->ruleId);
+        $this->assertSame(PriceRuleId::Base, $quote->trace[2]->ruleId);
+        foreach ($quote->trace as $line) {
+            $this->assertNotSame(PriceRuleId::Indoor, $line->ruleId);
+        }
         $this->assertNotSame(
             $quote->classified[0]->piece->pieceIndex,
             $quote->classified[1]->piece->pieceIndex,

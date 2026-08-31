@@ -63,8 +63,8 @@ final class QuoteEngineClassificationTest extends TestCase
         $this->assertSame(ShippingClass::Paket, $quote->classified[0]->class);
         $this->assertNotSame(ShippingClass::Spedition, $quote->classified[0]->class);
         $this->assertCount(1, $quote->shipments);
-        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->class);
-        $this->assertCount(2, $quote->shipments[0]->pieces);
+        $this->assertSame(ShippingClass::Paket, $quote->shipments[0]->shipment->class);
+        $this->assertCount(2, $quote->shipments[0]->shipment->pieces);
     }
 
     public function testGirthThresholdIsStrictlyAboveThreeThousand(): void
@@ -122,6 +122,8 @@ final class QuoteEngineClassificationTest extends TestCase
         $this->assertSame(RejectReason::ZoneForbidden, $quote->destination->reason);
         $this->assertSame([], $quote->classified);
         $this->assertSame([], $quote->shipments);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
     }
 
     public function testUnservedCountryHasNoClassifiedPieces(): void
@@ -136,6 +138,8 @@ final class QuoteEngineClassificationTest extends TestCase
         $this->assertSame(RejectReason::CountryNotServed, $quote->destination->reason);
         $this->assertSame([], $quote->classified);
         $this->assertSame([], $quote->shipments);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
     }
 
     public function testFieldOrderDoesNotChangeClass(): void

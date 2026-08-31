@@ -18,6 +18,12 @@ use OxidShipping\Engine\Result\InputSnapshot;
 use OxidShipping\Engine\Result\PieceRejection;
 use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\ShippingClass;
+use OxidShipping\Engine\Tariff\PriceLine;
+use OxidShipping\Engine\Tariff\PriceRuleId;
+use OxidShipping\Engine\Tariff\PriceStage;
+use OxidShipping\Engine\Tariff\PricedShipment;
+use OxidShipping\Engine\Tests\Support\TestHashes;
+use OxidShipping\Engine\Tests\Support\TestPricing;
 use PHPUnit\Framework\TestCase;
 
 final class QuoteFromPipelineTest extends TestCase
@@ -40,6 +46,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '99999', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -61,6 +68,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -82,6 +90,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -107,6 +116,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '99999', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -128,6 +138,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -154,10 +165,13 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot($lines, '99999', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
 
         $this->assertSame([], $quote->classified);
         $this->assertSame([], $quote->shipments);
+        $this->assertSame(0, $quote->totalCents);
+        $this->assertSame([], $quote->trace);
         $this->assertSame(
             [[0, 0], [1, 0]],
             array_map(
@@ -165,6 +179,7 @@ final class QuoteFromPipelineTest extends TestCase
                 $quote->rejections,
             ),
         );
+        $this->assertSame(TestHashes::PLACEHOLDER, $quote->configHash);
     }
 
     public function testKnownDestinationWithoutClassifiedPiecesIsProgrammerError(): void
@@ -185,6 +200,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -207,6 +223,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '99999', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -229,6 +246,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -256,6 +274,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -283,6 +302,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -305,6 +325,7 @@ final class QuoteFromPipelineTest extends TestCase
             [],
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -335,9 +356,72 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             $classified,
-            $shipments,
+            TestPricing::priceAll($shipments),
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
+        );
+    }
+
+    public function testShipmentPieceClassMismatchIsProgrammerError(): void
+    {
+        $line = new OrderLine('line-1', 100, 100, 100, 1, 1);
+        $pieces = (new PieceFactory())->expand(
+            [$line],
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $classified = [new ClassifiedPiece($pieces[0], ShippingClass::Paket)];
+        $shipments = [
+            new Shipment(ShippingClass::Spedition, 'de-01', false, [
+                new ClassifiedPiece($pieces[0], ShippingClass::Spedition),
+            ]),
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Shipment piece class does not match the classified piece.');
+        Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            TestPricing::priceAll($shipments),
+            new InputSnapshot([$line], '01067', 'DE', false),
+            'test-2026',
+            TestHashes::PLACEHOLDER,
+        );
+    }
+
+    public function testShipmentPieceBillableMismatchIsProgrammerError(): void
+    {
+        $line = new OrderLine('line-1', 100, 100, 100, 1, 1);
+        $divisor = VolumetricDivisor::fromDimFactorCmKg(5000);
+        $pieces = (new PieceFactory())->expand([$line], $divisor);
+        $classified = [new ClassifiedPiece($pieces[0], ShippingClass::Paket)];
+        $heavier = MeasuredPiece::from(
+            'line-1',
+            0,
+            0,
+            Dimensions::canonical(100, 100, 100),
+            15000,
+            $divisor,
+        );
+        $shipments = [
+            new Shipment(ShippingClass::Paket, 'de-01', false, [
+                new ClassifiedPiece($heavier, ShippingClass::Paket),
+            ]),
+        ];
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Shipment piece billableGrams does not match the classified piece.');
+        Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            TestPricing::priceAll($shipments),
+            new InputSnapshot([$line], '01067', 'DE', false),
+            'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -366,9 +450,10 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             $classified,
-            $shipments,
+            TestPricing::priceAll($shipments),
             new InputSnapshot($lines, '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -392,9 +477,10 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             $classified,
-            $shipments,
+            TestPricing::priceAll($shipments),
             new InputSnapshot([$line], '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -424,9 +510,10 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             $classified,
-            $shipments,
+            TestPricing::priceAll($shipments),
             new InputSnapshot($lines, '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -454,9 +541,10 @@ final class QuoteFromPipelineTest extends TestCase
             $rejected,
             [new PieceRejection('line-1', 0, 0, $rejected)],
             [],
-            $shipments,
+            TestPricing::priceAll($shipments),
             new InputSnapshot([$line], '99999', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
     }
 
@@ -484,13 +572,14 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             $classified,
-            $shipments,
+            TestPricing::priceAll($shipments),
             new InputSnapshot($lines, '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
 
-        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[0]->class);
-        $this->assertSame(ShippingClass::Spedition, $quote->shipments[1]->class);
+        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[0]->shipment->class);
+        $this->assertSame(ShippingClass::Spedition, $quote->shipments[1]->shipment->class);
     }
 
     public function testMixedShipmentZonesAssembleWhenDestinationIsDe01(): void
@@ -517,15 +606,158 @@ final class QuoteFromPipelineTest extends TestCase
             new KnownZone('de-01'),
             [],
             $classified,
-            $shipments,
+            TestPricing::priceAll($shipments),
             new InputSnapshot($lines, '01067', 'DE', false),
             'test-2026',
+            TestHashes::PLACEHOLDER,
         );
 
         $this->assertInstanceOf(KnownZone::class, $quote->destination);
         $this->assertCount(2, $quote->shipments);
-        $this->assertSame('de-01', $quote->shipments[0]->zoneId);
-        $this->assertSame('de-hh', $quote->shipments[1]->zoneId);
+        $this->assertSame('de-01', $quote->shipments[0]->shipment->zoneId);
+        $this->assertSame('de-hh', $quote->shipments[1]->shipment->zoneId);
         $this->assertSame('de-01', $quote->destination->zoneId);
+        $this->assertSame(
+            $quote->shipments[0]->totalCents + $quote->shipments[1]->totalCents,
+            $quote->totalCents,
+        );
+        $this->assertSame(
+            array_merge($quote->shipments[0]->lines, $quote->shipments[1]->lines),
+            $quote->trace,
+        );
+        $sum = 0;
+        foreach ($quote->trace as $line) {
+            $sum += $line->deltaCents;
+        }
+        $this->assertSame($quote->totalCents, $sum);
+    }
+
+    public function testFromPipelineSortsByRankWhenSpeditionIsCheaperThanSperrgut(): void
+    {
+        $lines = [
+            new OrderLine('spedition', 100, 100, 100, 1, 1),
+            new OrderLine('sperrgut', 100, 100, 100, 1, 1),
+        ];
+        $pieces = (new PieceFactory())->expand(
+            $lines,
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $classified = [
+            new ClassifiedPiece($pieces[0], ShippingClass::Spedition),
+            new ClassifiedPiece($pieces[1], ShippingClass::Sperrgut),
+        ];
+        $spedition = new PricedShipment(
+            new Shipment(ShippingClass::Spedition, 'de-01', false, [$classified[0]]),
+            100,
+            100,
+            5,
+            [
+                new PriceLine(
+                    PriceRuleId::Base,
+                    PriceStage::Base,
+                    100,
+                    'Base rate for piece (0, 0), billable 200 g.',
+                    $classified[0]->piece->lineIndex,
+                    $classified[0]->piece->pieceIndex,
+                ),
+            ],
+        );
+        $sperrgut = new PricedShipment(
+            new Shipment(ShippingClass::Sperrgut, 'de-01', false, [$classified[1]]),
+            9000,
+            9000,
+            3,
+            [
+                new PriceLine(
+                    PriceRuleId::Base,
+                    PriceStage::Base,
+                    9000,
+                    'Base rate for piece (1, 0), billable 200 g.',
+                    $classified[1]->piece->lineIndex,
+                    $classified[1]->piece->pieceIndex,
+                ),
+            ],
+        );
+
+        $quote = Quote::fromPipeline(
+            $pieces,
+            new KnownZone('de-01'),
+            [],
+            $classified,
+            [$spedition, $sperrgut],
+            new InputSnapshot($lines, '01067', 'DE', false),
+            'test-2026',
+            TestHashes::PLACEHOLDER,
+        );
+
+        $this->assertSame(ShippingClass::Sperrgut, $quote->shipments[0]->shipment->class);
+        $this->assertSame(ShippingClass::Spedition, $quote->shipments[1]->shipment->class);
+        $this->assertSame(9000, $quote->shipments[0]->totalCents);
+        $this->assertSame(100, $quote->shipments[1]->totalCents);
+        $this->assertLessThan($sperrgut->totalCents, $spedition->totalCents);
+        $this->assertSame(9100, $quote->totalCents);
+        $this->assertSame(
+            array_merge($quote->shipments[0]->lines, $quote->shipments[1]->lines),
+            $quote->trace,
+        );
+        $this->assertSame(PriceRuleId::Base, $quote->trace[0]->ruleId);
+        $this->assertSame(9000, $quote->trace[0]->deltaCents);
+        $this->assertSame(100, $quote->trace[1]->deltaCents);
+    }
+
+    public function testEmptyConfigHashIsProgrammerError(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Config hash must be 64 lowercase hexadecimal characters.');
+        $this->fromPipelineWithHash('');
+    }
+
+    public function testUppercaseConfigHashIsProgrammerError(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Config hash must be 64 lowercase hexadecimal characters.');
+        $this->fromPipelineWithHash(strtoupper(TestHashes::PLACEHOLDER));
+    }
+
+    public function testShortConfigHashIsProgrammerError(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Config hash must be 64 lowercase hexadecimal characters.');
+        $this->fromPipelineWithHash(str_repeat('a', 63));
+    }
+
+    public function testLongConfigHashIsProgrammerError(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Config hash must be 64 lowercase hexadecimal characters.');
+        $this->fromPipelineWithHash(str_repeat('a', 65));
+    }
+
+    public function testPrefixedConfigHashIsProgrammerError(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Config hash must be 64 lowercase hexadecimal characters.');
+        $this->fromPipelineWithHash('sha256:' . TestHashes::PLACEHOLDER);
+    }
+
+    private function fromPipelineWithHash(string $configHash): Quote
+    {
+        $line = new OrderLine('line-1', 100, 100, 100, 1, 1);
+        $pieces = (new PieceFactory())->expand(
+            [$line],
+            VolumetricDivisor::fromDimFactorCmKg(5000),
+        );
+        $rejected = new Rejected(RejectReason::UnknownZone);
+
+        return Quote::fromPipeline(
+            $pieces,
+            $rejected,
+            [new PieceRejection('line-1', 0, 0, $rejected)],
+            [],
+            [],
+            new InputSnapshot([$line], '99999', 'DE', false),
+            'test-2026',
+            $configHash,
+        );
     }
 }

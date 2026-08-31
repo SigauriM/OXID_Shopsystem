@@ -1,11 +1,12 @@
 # OXID Shipping Engine — stage 1 core
 
 Framework-free PHP library that turns a cart of order lines into classified pieces grouped
-into shipments for German parcel and freight shipping. Stage 1 builds the calculation core:
-input validation, canonical dimensions, volumetric weight, billable weight, fail-closed
-zone resolution, per-piece shipping class, a firm-level order-weight class raise, and
-grouping into shipments (one stop = one class, zone and indoor flag).
-Prices and the OXID module wiring come later and are deliberately absent.
+into priced shipments for German parcel and freight shipping. Stage 1 builds the calculation
+core: input validation, canonical dimensions, volumetric weight, billable weight, fail-closed
+zone resolution, per-piece shipping class, a firm-level order-weight class raise, grouping
+into shipments (one stop = one class, zone and indoor flag), and tariff (base per piece plus
+named surcharges after the final class).
+The OXID module wiring comes later and is deliberately absent.
 
 The engine has no I/O: no database, no HTTP, no filesystem, no globals. Everything enters
 through `QuoteRequest` and leaves through `QuoteResult`.
@@ -13,10 +14,17 @@ through `QuoteRequest` and leaves through `QuoteResult`.
 ## Status
 
 Pre-release. There is no public API stability yet: result shapes still change between steps.
-`Quote` holds `shipments` (one stop = key `(class, zoneId, indoor)` for every class,
-including Paket) and `classified` (class after the order-weight override when the address
-is Known). There is no public pipeline `pieces` list on the quote. `classified` and
-`shipments` are empty when the address is Rejected. Cents are not on this result.
+`Quote` holds `shipments` as `PricedShipment` (priced stop; inner grouping key still
+`(class, zoneId, indoor)` for every class, including Paket), `classified` (class after the
+order-weight override when the address is Known), `totalCents` (sum of priced shipments;
+rejections add 0), `trace` (monetary `PriceLine`s), `configVersion`, `configHash` (SHA-256
+of the tariff payload without the version label) and a normalised `InputSnapshot`.
+There is no public pipeline `pieces` list on the quote. `classified` and `shipments` are
+empty when the address is Rejected: `totalCents === 0`, `trace === []`. Known and Rejected
+quotes both carry `configHash`. `ValidationFailed` does not. `Grouping\Shipment` has no cents.
+Replay a dispute with `new QuoteRequest` from snapshot fields plus the stored tariff document;
+there is no `QuoteRequest::fromSnapshot` (that would cycle Input → Result). `QuoteEncoder`
+is the byte-stable JSON of a `Quote`. The shop puts SKU ids in `lineId`, not customer names.
 
 ## Requirements
 
@@ -49,7 +57,7 @@ anywhere, so results are exact and reproducible.
 |---|---|
 | Lengths | millimetres |
 | Weights | grams |
-| Money | cents (not used in stage 1) |
+| Money | eurocents (`int`) |
 | DIM factor | cm³/kg, exactly as printed in the carrier tariff (for example 5000 or 6000) |
 
 The DIM factor is the one value that historically gets corrupted by unit confusion, so it
@@ -63,14 +71,15 @@ rejects it before any test does.
 
 | Namespace | Responsibility | May depend on |
 |---|---|---|
-| `Domain` | Units and vocabulary: `VolumetricDivisor`, `AddressShape`, `PieceOutcome` (`Shippable`, `Rejected`), `RejectReason`, `ZoneLookup` (`KnownZone`, `UnknownZone`), `ClassificationConfig` (`ClassFloor`, `ThresholdTable`), `OrderWeightThreshold` | `ShippingClass` only |
-| `Input` | The request as received: `QuoteRequest`, `OrderLine`, `TariffConfig` (holds `ClassificationConfig` and `OrderWeightThreshold` as `$orderWeightSpeditionThreshold`) | `Domain` |
+| `Domain` | Units and vocabulary: `VolumetricDivisor`, `AddressShape`, `PieceOutcome` (`Shippable`, `Rejected`), `RejectReason`, `ZoneLookup` (`KnownZone`, `UnknownZone`), `ClassificationConfig` (`ClassFloor`, `ThresholdTable`), `OrderWeightThreshold`, `TariffRates` (`WeightRateTable`, `SurchargeConfig`, `TransitTable`) | `ShippingClass` only |
+| `Input` | The request as received: `QuoteRequest`, `OrderLine`, `TariffConfig` (holds `ClassificationConfig`, `OrderWeightThreshold` as `$orderWeightSpeditionThreshold`, and `TariffRates` as `$rates`), `TariffDocument` (canonical payload and SHA-256 hash; hash covers rates, zones, DIM factor, N) | `Domain` |
 | `Validation` | Shop policy — what input is accepted: `InputValidator`, `InputLimits`, `ValidationError`, `ValidationErrorCode` | `Input`, `Domain` |
 | `Measurement` | Geometry and weights: `Dimensions`, `VolumetricWeight`, `MeasuredPiece`, `PieceFactory` | `Domain`, and `Input\OrderLine` only |
 | `Classification` | Per-piece class from named threshold tables: `PieceClassifier`, three rules, `ClassifiedPiece` | `Domain`, `Measurement` |
 | `OrderRules` | Firm-level class raise after classification: `OrderWeightSpeditionOverride` | `Classification`, `Domain` |
-| `Grouping` | One stop: `GroupablePiece`, `Shipment`, `ShipmentGrouper`. Key is `(class, zoneId, indoor)` for every class, including Paket. | `Classification`, `Domain` (`ZoneId`), `ShippingClass` |
-| `Result` | What leaves the engine: `QuoteResult`, `Quote`, `ValidationFailed`, `InputSnapshot`. `Quote` holds `shipments`; there is no public `pieces`. | `Measurement`, `Validation`, `Domain`, `Classification`, `Grouping` |
+| `Grouping` | One stop: `GroupablePiece`, `Shipment`, `ShipmentGrouper`. Key is `(class, zoneId, indoor)` for every class, including Paket. No cents. | `Classification`, `Domain` (`ZoneId`), `ShippingClass` |
+| `Tariff` | Price a stop: `ShipmentPricer`, `PricedShipment`, `PriceLine`. Indoor once and only Spedition. Priority only on surcharges. | `Grouping`, `Domain`, `ShippingClass` |
+| `Result` | What leaves the engine: `QuoteResult`, `Quote`, `ValidationFailed`, `InputSnapshot`, `QuoteEncoder`. `Quote.shipments` is `list<PricedShipment>`. | `Measurement`, `Validation`, `Domain`, `Classification`, `Grouping`, `Tariff` |
 | `Zone` | Resolve a normalised address against the directory: `ZoneResolver` | `Domain` |
 | root | `QuoteEngine` (entry point), `ShippingClass` | all of the above |
 
@@ -78,6 +87,9 @@ rejects it before any test does.
 reusable and cycle-free. `Measurement` does not know about `QuoteRequest` either:
 `PieceFactory::expand()` takes `list<OrderLine>` and a `VolumetricDivisor`, so measurement
 can be exercised without constructing a whole request.
+`Grouping` does not know `Tariff`. `Classification` and `OrderRules` do not know `Tariff`.
+`Tariff` does not know `Result`, `Input`, `Zone` or `Quote`. `Shippable` is vocabulary for
+a piece outcome; it is not the tariff input. The pricer accepts `Shipment`.
 
 ## Pipeline
 
@@ -104,9 +116,16 @@ can be exercised without constructing a whole request.
    destination `zoneId` and the request `indoor` flag, then `ShipmentGrouper` groups them
    into shipments. A Rejected address skips grouping: `shipments` stays empty. Indoor is
    part of the key for every class, including Paket. There are no cents on this step.
-9. A `Quote` is returned with `shipments`, the address `destination`, rejections,
-   classified pieces, a normalised `InputSnapshot` and the tariff `configVersion`.
-   There is no public pipeline `pieces` list. There are no cents on this result.
+9. On that same Known path, `ShipmentPricer` prices each grouped stop against
+   `$request->config->rates`. Base is per piece at the final class. Island and indoor
+   surcharges fire at most once per stop; indoor only when the final class is Spedition.
+   A Rejected address skips the pricer: cents stay 0.
+10. A `Quote` is returned with priced `shipments`, `totalCents`, monetary `trace`, the
+    address `destination`, rejections, classified pieces, a normalised `InputSnapshot`,
+    the tariff `configVersion` and `configHash` (SHA-256 of the canonical payload, version
+    excluded). There is no public pipeline `pieces` list.
+    Known quotes carry cents; Rejected quotes carry `totalCents === 0` and `trace === []`.
+    Both Known and Rejected quotes carry `configHash`. `ValidationFailed` does not.
 
 The order is load-bearing. `Measurement` assumes validated input, so `Dimensions::canonical()`
 and `MeasuredPiece::from()` throw `InvalidArgumentException` on impossible values instead of
@@ -136,7 +155,7 @@ Arithmetic safety — violations are exceptions, not user-facing errors:
 |---|---|---|
 | DIM factor range | 1000 to 10 000 cm³/kg | `Domain\VolumetricDivisor::fromDimFactorCmKg()` |
 | Side in the volume formula | 200 000 mm | `Measurement\VolumetricWeight` (private constant) |
-| Platform | 64-bit PHP only | `QuoteEngine::__construct()` |
+| Platform | 64-bit PHP | `QuoteEngine::__construct()` |
 
 The split matters: 15 000 mm means "we do not ship that", 200 000 mm means "beyond this the
 integer product is no longer safe". They are different failures with different audiences and
@@ -164,18 +183,25 @@ Included: input validation, canonical dimensions, Gurtmaß (`Dimensions::girthMm
 volumetric weight, billable weight, the normalised input snapshot, fail-closed zone
 resolution (exact match, no default), per-piece shipping class (`ClassifiedPiece`)
 when the destination is Known, the order-weight Spedition override after that
-classification, and grouping into `Shipment`s on the Known path only. `TariffConfig`
-holds a required `ClassificationConfig` and a required `OrderWeightThreshold` as
-`$orderWeightSpeditionThreshold`; there is no default table that would silently class
-every piece as Paket, and no default N that would silently never raise. The engine
-assigns a class only for a Known allowed zone, raises class only after classification,
-only on Known, and groups only after that, only on Known. Indoor belongs in the
-grouping key for every class, including Paket.
+classification, grouping into `Shipment`s on the Known path only, pricing those
+stops into `PricedShipment` after the final class, and a SHA-256 config hash of the
+canonical tariff payload (without `configVersion`) plus byte-stable `QuoteEncoder` JSON.
+`TariffConfig` holds a required
+`ClassificationConfig`, a required `OrderWeightThreshold` as
+`$orderWeightSpeditionThreshold`, and required `TariffRates` as `$rates`; there is no
+default table that would silently class every piece as Paket, no default N that would
+silently never raise, and no default 0 € rate. The engine assigns a class only for a
+Known allowed zone, raises class only after classification, only on Known, groups only
+after that, only on Known, and prices only after grouping, only on Known. Indoor belongs
+in the grouping key for every class, including Paket; the indoor surcharge fires once
+per stop and only for final Spedition. `Shippable` is not the tariff input.
+The engine has no filesystem: `TariffDocument::fromArray` is the document boundary;
+`file_get_contents` belongs in OXID later. Replay uses snapshot fields in `new QuoteRequest`.
 
-Not included, by decision rather than by omission: prices and totals, surcharges,
-carrier APIs, persistence, HTTP and the OXID module integration.
-`Shippable` remains vocabulary for later tariff; the class on a piece is
-`ShippingClass` on `ClassifiedPiece`. Cents are still later.
+Not included, by decision rather than by omission: carrier APIs, persistence, HTTP and
+the OXID module integration.
+`Shippable` remains vocabulary for a piece outcome; the class on a piece is
+`ShippingClass` on `ClassifiedPiece`.
 
 ## Tests
 

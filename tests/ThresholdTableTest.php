@@ -41,6 +41,27 @@ final class ThresholdTableTest extends TestCase
         $this->assertSame($forward->floor(3601), $reversed->floor(3601));
     }
 
+    public function testReversedEntriesYieldTheSameFloorsOrder(): void
+    {
+        $forward = ThresholdTable::fromEntries([
+            new ClassFloor(3000, ShippingClass::Sperrgut),
+            new ClassFloor(3600, ShippingClass::Spedition),
+        ]);
+        $reversed = ThresholdTable::fromEntries([
+            new ClassFloor(3600, ShippingClass::Spedition),
+            new ClassFloor(3000, ShippingClass::Sperrgut),
+        ]);
+
+        $this->assertSame(
+            array_map(static fn (ClassFloor $floor): int => $floor->above, $forward->floors()),
+            array_map(static fn (ClassFloor $floor): int => $floor->above, $reversed->floors()),
+        );
+        $this->assertSame([3000, 3600], array_map(
+            static fn (ClassFloor $floor): int => $floor->above,
+            $forward->floors(),
+        ));
+    }
+
     public function testSingleSpeditionEntrySkipsSperrgut(): void
     {
         $table = ThresholdTable::fromEntries([
