@@ -6,8 +6,13 @@
          cacheDirectory=".phpunit.cache"
          failOnEmptyTestSuite="true">
     <testsuites>
+        <!-- Integration requires a live shop; CI invokes the Module suite only. -->
         <testsuite name="Module">
             <directory>tests</directory>
+            <exclude>tests/TariffRepositoryIntegrationTest.php</exclude>
+        </testsuite>
+        <testsuite name="Integration">
+            <file>tests/TariffRepositoryIntegrationTest.php</file>
         </testsuite>
     </testsuites>
     <source>
@@ -16,6 +21,9 @@
             <directory>src/Mapping</directory>
             <directory>src/Quote</directory>
             <directory>src/Tariff</directory>
+            <directory>src/Admin</directory>
+            <directory>src/Sandbox</directory>
+            <directory>src/Seo</directory>
         </include>
     </source>
 </phpunit>
