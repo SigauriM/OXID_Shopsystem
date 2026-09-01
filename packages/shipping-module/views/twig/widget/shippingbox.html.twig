@@ -1,0 +1,10 @@
+{% set quote = quote|default(null) %}
+{% if quote and quote.isQuoted() and quote.shipments|length %}
+    <div>
+        {{ translate({ ident: quote.shipments[0].classLangKey }) }}
+        · {{ format_price(quote.totalCents / 100, { currency: currency }) }}
+        · {{ quote.shipments[0].transitDays }} {{ translate({ ident: "OXIDSHIPPING_DAYS" }) }}
+    </div>
+{% elseif quote and (quote.isNeedAddress() or quote.isNotPossible() or quote.isInvalid()) %}
+    <div class="alert alert-warning mb-0 py-2">{{ translate({ ident: quote.messageLangKey }) }}</div>
+{% endif %}

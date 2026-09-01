@@ -11,6 +11,8 @@ use OxidShipping\Module\Mapping\CartMapper;
 use OxidShipping\Module\Quote\QuoteFacade;
 use OxidShipping\Module\Tariff\TariffProvider;
 use OxidShipping\Module\Tests\Support\FakeCartSource;
+use OxidShipping\Module\Tests\Support\FakeTariffRepository;
+use OxidShipping\Module\Tests\Support\FixtureTariff;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -23,7 +25,7 @@ final class QuoteTraceLoggerTest extends TestCase
 
         $facade = new QuoteFacade(
             new QuoteEngine(),
-            new TariffProvider(),
+            new TariffProvider(new FakeTariffRepository(FixtureTariff::config())),
             new CartMapper(),
             new NullLogger(),
             new QuoteTraceLogger(new NullLogger(), '1.0.0', $path),
@@ -53,6 +55,7 @@ final class QuoteTraceLoggerTest extends TestCase
         $this->assertIsArray($row['quote']);
         $this->assertSame('01067', $row['quote']['snapshot']['postalCode']);
         $this->assertSame(6600, $row['quote']['totalCents']);
+        $this->assertSame('Basket', $row['channel']);
 
         $encoded = json_encode($row);
         $this->assertIsString($encoded);

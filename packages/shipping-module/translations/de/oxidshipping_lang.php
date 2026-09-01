@@ -13,4 +13,10 @@ $aLang = [
     'OXIDSHIPPING_CLASS_SPERRGUT' => 'Sperrgut',
     'OXIDSHIPPING_CLASS_SPEDITION' => 'Spedition',
     'OXIDSHIPPING_DAYS' => 'Tage',
+    'OXIDSHIPPING_BOX_TITLE' => 'Versand',
+    'OXIDSHIPPING_BOX_PLZ' => 'PLZ',
+    'OXIDSHIPPING_BOX_QTY' => 'Menge',
+    'OXIDSHIPPING_BOX_CALCULATE' => 'Berechnen',
+    'OXIDSHIPPING_BOX_HINT' => 'Bitte PLZ eingeben.',
+    'OXIDSHIPPING_TRY_LATER' => 'Bitte später erneut versuchen.',
 ];

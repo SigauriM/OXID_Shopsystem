@@ -9,9 +9,16 @@
                 <span>{{ format_price(quote.totalCents / 100, { currency: currency }) }}</span>
             </div>
             {% for shipment in quote.shipments %}
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <span>{{ translate({ ident: shipment.classLangKey }) }} · {{ shipment.transitDays }} {{ translate({ ident: "OXIDSHIPPING_DAYS" }) }}</span>
-                    <span>{{ format_price(shipment.totalCents / 100, { currency: currency }) }}</span>
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>{{ translate({ ident: shipment.classLangKey }) }} · {{ shipment.transitDays }} {{ translate({ ident: "OXIDSHIPPING_DAYS" }) }}</span>
+                        <span>{{ format_price(shipment.totalCents / 100, { currency: currency }) }}</span>
+                    </div>
+                    <ul class="small mb-0 mt-1">
+                        {% for piece in shipment.pieces %}
+                            <li>{{ quote.lineLabels[piece.lineIndex]|default(piece.lineId) }}</li>
+                        {% endfor %}
+                    </ul>
                 </div>
             {% endfor %}
         {% elseif quote.isNeedAddress() or quote.isNotPossible() or quote.isInvalid() %}

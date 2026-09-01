@@ -8,3 +8,6 @@ parameters:
         - src/Mapping
         - src/Quote
         - src/Tariff
+        - src/Admin
+        - src/Sandbox
+        - src/Seo

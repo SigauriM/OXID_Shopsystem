@@ -11,14 +11,17 @@ use OxidShipping\Engine\Input\TariffDocument;
 use OxidShipping\Engine\QuoteEngine;
 use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\Tests\Support\TestConfig;
+use OxidShipping\Module\Tariff\TariffLoadFailed;
 use OxidShipping\Module\Tariff\TariffProvider;
+use OxidShipping\Module\Tests\Support\FakeTariffRepository;
+use OxidShipping\Module\Tests\Support\FixtureTariff;
 use PHPUnit\Framework\TestCase;
 
 final class TariffProviderTest extends TestCase
 {
     public function testProviderReturnsTariffConfigAndGoldenQuoteIs6600Cents(): void
     {
-        $provider = new TariffProvider();
+        $provider = new TariffProvider(new FakeTariffRepository(FixtureTariff::config()));
         $config = $provider->get();
 
         $this->assertInstanceOf(TariffConfig::class, $config);
@@ -41,6 +44,24 @@ final class TariffProviderTest extends TestCase
 
         $this->assertInstanceOf(Quote::class, $result);
         $this->assertSame(6600, $result->totalCents);
+    }
+
+    public function testNoActiveRowThrowsTariffLoadFailed(): void
+    {
+        $provider = new TariffProvider(new FakeTariffRepository());
+
+        $this->expectException(TariffLoadFailed::class);
+        $this->expectExceptionMessage('No active shipping tariff.');
+        $provider->get();
+    }
+
+    public function testBrokenPayloadThrowsTariffLoadFailed(): void
+    {
+        $provider = new TariffProvider(FakeTariffRepository::withBrokenActivePayload());
+
+        $this->expectException(TariffLoadFailed::class);
+        $this->expectExceptionMessage('Shop tariff document is invalid.');
+        $provider->get();
     }
 
     public function testFixtureKeepsDresdenPostalCodeAsString(): void

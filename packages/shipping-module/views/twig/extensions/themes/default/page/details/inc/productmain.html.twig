@@ -1,0 +1,22 @@
+{% extends "page/details/inc/productmain.html.twig" %}
+
+{% block details_productmain_deliverytime %}
+    {% set json = oView.getOxidShippingSchemaJson() %}
+    {% if json %}
+        <script type="application/ld+json">{{ json|raw }}</script>
+    {% endif %}
+    {{ parent() }}
+    {% if oDetailsProduct.oxarticles__oxid.value %}
+        {{ script({ include: oViewConf.getModuleUrl('oxidshipping', 'js/shipping-box.js'), priority: 20, dynamic: __oxid_include_dynamic }) }}
+        <div class="oxidshipping-box mt-3" id="oxidshipping-box" data-widget="{{ oView.getWidgetLink() }}" data-anid="{{ oDetailsProduct.oxarticles__oxid.value }}">
+            <div class="fw-semibold mb-2">{{ translate({ ident: "OXIDSHIPPING_BOX_TITLE" }) }}</div>
+            <div id="oxidshipping-box-result" class="small mb-2">{{ translate({ ident: "OXIDSHIPPING_BOX_HINT" }) }}</div>
+            <div class="input-group input-group-sm">
+                <input type="text" id="oxidshipping-plz" class="form-control" maxlength="10" inputmode="numeric" autocomplete="postal-code" aria-label="{{ translate({ ident: "OXIDSHIPPING_BOX_PLZ" }) }}" value="">
+                <span class="input-group-text">{{ oView.getOxidShippingCountryCode() }}</span>
+                <input type="text" id="oxidshipping-am" class="form-control" maxlength="3" value="1" aria-label="{{ translate({ ident: "OXIDSHIPPING_BOX_QTY" }) }}">
+                <button type="button" class="btn btn-outline-secondary" id="oxidshipping-calculate">{{ translate({ ident: "OXIDSHIPPING_BOX_CALCULATE" }) }}</button>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

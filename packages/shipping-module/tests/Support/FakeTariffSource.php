@@ -13,6 +13,7 @@ final class FakeTariffSource extends TariffProvider
     public function __construct(
         private TariffConfig|TariffLoadFailed $result,
     ) {
+        parent::__construct(new FakeTariffRepository());
     }
 
     public function get(): TariffConfig

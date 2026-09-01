@@ -5,6 +5,7 @@ Disallow: /tmp/
 Disallow: /views/
 Disallow: /Setup/
 Disallow: /log/
+Disallow: /widget.php
 #
 Disallow: /newsletter/
 Disallow: /en/newsletter/

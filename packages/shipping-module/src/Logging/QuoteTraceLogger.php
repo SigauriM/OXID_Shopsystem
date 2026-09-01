@@ -8,6 +8,7 @@ use OxidShipping\Engine\Result\Quote;
 use OxidShipping\Engine\Result\QuoteEncoder;
 use OxidShipping\Engine\Result\QuoteResult;
 use OxidShipping\Engine\Result\ValidationFailed;
+use OxidShipping\Module\Quote\QuoteChannel;
 use OxidShipping\Module\Quote\ShopQuote;
 use OxidShipping\Module\Quote\ShopQuoteStatus;
 use Psr\Log\LoggerInterface;
@@ -26,8 +27,12 @@ final class QuoteTraceLogger
         $this->filePath = $filePath ?? dirname(__DIR__, 4) . '/source/log/shipping-quotes.ndjson';
     }
 
-    public function write(ShopQuote $shopQuote, QuoteResult $result, string $configHash): void
-    {
+    public function write(
+        ShopQuote $shopQuote,
+        QuoteResult $result,
+        string $configHash,
+        QuoteChannel $channel = QuoteChannel::Basket,
+    ): void {
         if ($shopQuote->status === ShopQuoteStatus::NeedAddress) {
             return;
         }
@@ -40,17 +45,22 @@ final class QuoteTraceLogger
         }
 
         try {
-            $payload = $this->payload($shopQuote, $result, $configHash);
+            $payload = $this->payload($shopQuote, $result, $configHash, $channel);
             $this->append($payload);
         } catch (\Throwable) {
             $this->logger->error('Shipping quote trace could not be written.');
         }
     }
 
-    private function payload(ShopQuote $shopQuote, QuoteResult $result, string $configHash): string
-    {
+    private function payload(
+        ShopQuote $shopQuote,
+        QuoteResult $result,
+        string $configHash,
+        QuoteChannel $channel,
+    ): string {
         $envelope = [
             'at' => gmdate('Y-m-d\TH:i:s\Z'),
+            'channel' => $channel->value,
             'configHash' => $configHash,
             'moduleVersion' => $this->moduleVersion,
             'status' => $shopQuote->status->value,

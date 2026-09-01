@@ -7,14 +7,29 @@ services:
     exclude:
       - 'src/Extension/'
       - 'src/Adapter/'
+      - 'src/Application/'
       - 'src/Mapping/CartLine.php'
       - 'src/Mapping/CartSource.php'
       - 'src/Mapping/MappedCart.php'
       - 'src/Mapping/MappingFailed.php'
+      - 'src/Quote/QuoteChannel.php'
+      - 'src/Quote/StorefrontCountry.php'
+      - 'src/Quote/ShopPiece.php'
       - 'src/Quote/ShopQuote.php'
       - 'src/Quote/ShopQuoteStatus.php'
       - 'src/Quote/ShopShipment.php'
       - 'src/Tariff/TariffLoadFailed.php'
+      - 'src/Tariff/TariffVersion.php'
+      - 'src/Tariff/TariffRepositoryInterface.php'
+      - 'src/Admin/SaveOutcome.php'
+      - 'src/Admin/DocumentDraft.php'
+      - 'src/Sandbox/SandboxRequest.php'
+      - 'src/Sandbox/SandboxView.php'
+      - 'src/Seo/ShippingFact.php'
+      - 'src/Seo/ProductFields.php'
+
+  OxidShipping\Module\Tariff\TariffRepositoryInterface:
+    alias: OxidShipping\Module\Tariff\TariffRepository
 
   OxidShipping\Engine\QuoteEngine:
     class: OxidShipping\Engine\QuoteEngine
@@ -23,5 +38,20 @@ services:
 
   OxidShipping\Module\Quote\QuoteFacade:
     class: OxidShipping\Module\Quote\QuoteFacade
+    autowire: true
+    public: true
+
+  OxidShipping\Module\Admin\TariffAdminService:
+    class: OxidShipping\Module\Admin\TariffAdminService
+    autowire: true
+    public: true
+
+  OxidShipping\Module\Sandbox\SandboxCalculator:
+    class: OxidShipping\Module\Sandbox\SandboxCalculator
+    autowire: true
+    public: true
+
+  OxidShipping\Module\Seo\ProductSchemaBuilder:
+    class: OxidShipping\Module\Seo\ProductSchemaBuilder
     autowire: true
     public: true

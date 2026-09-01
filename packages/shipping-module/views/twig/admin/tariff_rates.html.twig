@@ -1,0 +1,65 @@
+{% include "headitem.html.twig" with {title: "tbcloxidshipping_rates"|translate} %}
+
+{% include "@oxidshipping/admin/inc/tariff_tabs.html.twig" %}
+
+<h3>{{ translate({ ident: "tbcloxidshipping_rates" }) }}</h3>
+
+{% if not tariffDocument %}
+    <div class="errorbox">{{ translate({ ident: "OXIDSHIPPING_NO_ACTIVE" }) }}</div>
+{% else %}
+    {% set rateClasses = rateClasses|default(['paket', 'sperrgut', 'spedition']) %}
+
+    <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_VERSION" }) }}</td>
+            <td class="edittext">{{ tariffDocument.version }}</td>
+        </tr>
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_HASH" }) }}</td>
+            <td class="edittext">{{ baseHash }}</td>
+        </tr>
+    </table>
+
+    <h4>{{ translate({ ident: "OXIDSHIPPING_BASE" }) }}</h4>
+    {% for classValue in rateClasses %}
+        <h5>{{ translate({ ident: "OXIDSHIPPING_CLASS_" ~ classValue|upper }) }}</h5>
+        <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+            <thead>
+                <tr>
+                    <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_UP_TO" }) }}</td>
+                    <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_CENTS" }) }}</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in attribute(tariffDocument.rates.base, classValue)|default([]) %}
+                    <tr>
+                        <td class="edittext">{{ row.upTo }}</td>
+                        <td class="edittext">{{ row.cents }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+
+    <h4>{{ translate({ ident: "OXIDSHIPPING_TRANSIT" }) }}</h4>
+    <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+        <thead>
+            <tr>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_CLASS" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_ZONE_ID" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_DAYS" }) }}</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in tariffDocument.rates.transit|default([]) %}
+                <tr>
+                    <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_CLASS_" ~ row.class|upper }) }}</td>
+                    <td class="edittext">{{ row.zoneId }}</td>
+                    <td class="edittext">{{ row.days }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% include "bottomitem.html.twig" %}

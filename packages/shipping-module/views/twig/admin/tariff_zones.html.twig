@@ -1,0 +1,214 @@
+{% include "headitem.html.twig" with {title: "tbcloxidshipping_zones"|translate} %}
+
+{% include "@oxidshipping/admin/inc/tariff_tabs.html.twig" %}
+
+{{ script({ include: oViewConf.getModuleUrl('oxidshipping', 'js/tariff-admin.js'), priority: 20, dynamic: __oxid_include_dynamic }) }}
+
+<form name="myedit" id="myedit" action="{{ oViewConf.getSelfLink()|raw }}" method="post">
+    {{ oViewConf.getHiddenSid()|raw }}
+    <input type="hidden" name="cl" value="oxidshipping_zones">
+    <input type="hidden" name="fnc" value="save">
+    <input type="hidden" name="baseHash" value="{{ baseHash }}">
+
+    <h3>{{ translate({ ident: "tbcloxidshipping_zones" }) }}</h3>
+
+    {% if saveKind == 'saved' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_SAVED" }) }}</div>
+        {% if suggestedVersion %}
+            <div class="info">{{ translate({ ident: "OXIDSHIPPING_VERSION_SUGGEST" }) }} {{ suggestedVersion }}</div>
+        {% endif %}
+    {% elseif saveKind == 'renamed' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_RENAMED" }) }}</div>
+    {% elseif saveKind == 'unchanged' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_UNCHANGED" }) }}</div>
+    {% elseif saveKind == 'conflict' %}
+        <div class="errorbox">{{ translate({ ident: "OXIDSHIPPING_SAVE_CONFLICT" }) }}</div>
+    {% elseif saveKind == 'blocked' %}
+        <div class="errorbox">{{ kernelMessage }}</div>
+    {% endif %}
+
+    {% if kernelMessage and saveKind != 'blocked' %}
+        <div class="errorbox">
+            {{ translate({ ident: "OXIDSHIPPING_KERNEL_REJECTED" }) }}
+            <div>{{ kernelMessage }}</div>
+        </div>
+    {% endif %}
+
+    {% if not tariffDocument %}
+        <div class="errorbox">{{ translate({ ident: "OXIDSHIPPING_NO_ACTIVE" }) }}</div>
+    {% else %}
+        {% set fieldErrors = fieldErrors|default({}) %}
+        {% set servedCountryChoices = servedCountryChoices|default(['DE', 'AT']) %}
+        {% set shippingClasses = shippingClasses|default(['paket', 'sperrgut', 'spedition']) %}
+        {% set zoneIds = zoneIds|default([]) %}
+
+        <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+            <tr>
+                <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_VERSION" }) }}</td>
+                <td class="edittext">
+                    <input class="edittext" type="text" name="version" value="{{ tariffDocument.version }}" maxlength="64" size="40">
+                    {% if fieldErrors.version is defined %}
+                        <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.version|upper }) }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_SERVED_COUNTRIES" }) }}</td>
+                <td class="edittext">
+                    {% for code in servedCountryChoices %}
+                        <label>
+                            <input type="checkbox" name="servedCountries[]" value="{{ code }}"{% if code in tariffDocument.zones.servedCountries|default([]) %} checked{% endif %}>
+                            {{ code }}
+                        </label>
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+
+        <h4>{{ translate({ ident: "OXIDSHIPPING_ZONE_DEFINITIONS" }) }}</h4>
+        <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+            <thead>
+                <tr>
+                    <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_ZONE_ID" }) }}</td>
+                    <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_FORBIDDEN" }) }}</td>
+                    {% for classValue in shippingClasses %}
+                        <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_CLASS_" ~ classValue|upper }) }} ({{ translate({ ident: "OXIDSHIPPING_DAYS" }) }})</td>
+                    {% endfor %}
+                    <td class="listheader"></td>
+                </tr>
+            </thead>
+            <tbody data-oxidshipping-rows="definitions" data-name-prefix="definitions" data-oxidshipping-max="2048">
+                {% for row in tariffDocument.zones.directory.definitions|default([]) %}
+                    {% set idKey = 'definitions.' ~ loop.index0 ~ '.zoneId' %}
+                    <tr>
+                        <td class="edittext">
+                            <input class="edittext" type="text" name="definitions[{{ loop.index0 }}][zoneId]" data-name="zoneId" value="{{ row.zoneId }}" maxlength="32" size="16">
+                            {% if fieldErrors[idKey] is defined %}
+                                <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors[idKey]|upper }) }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="edittext">
+                            <input type="hidden" name="definitions[{{ loop.index0 }}][forbidden]" data-name="forbidden" value="0">
+                            <input type="checkbox" class="oxidshipping-forbidden" name="definitions[{{ loop.index0 }}][forbidden]" data-name="forbidden" value="1"{% if row.forbidden %} checked{% endif %}>
+                        </td>
+                        {% for classValue in shippingClasses %}
+                            {% set dayKey = 'definitions.' ~ loop.index0 ~ '.days.' ~ classValue %}
+                            <td class="edittext">
+                                <input class="edittext oxidshipping-day" type="text" name="definitions[{{ loop.index0 }}][days][{{ classValue }}]" data-name="[days][{{ classValue }}]" value="{{ row.days[classValue]|default('') }}" size="6"{% if row.forbidden %} disabled{% endif %}>
+                                {% if fieldErrors[dayKey] is defined %}
+                                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors[dayKey]|upper }) }}</div>
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                        <td class="edittext">
+                            <button type="button" class="oxidshipping-remove-row">{{ translate({ ident: "OXIDSHIPPING_REMOVE_ROW" }) }}</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p>
+            <button type="button" class="oxidshipping-add-row" data-oxidshipping-rows="definitions" data-oxidshipping-template="oxidshipping-zone-template">{{ translate({ ident: "OXIDSHIPPING_ADD_ZONE" }) }}</button>
+        </p>
+
+        <template id="oxidshipping-zone-template">
+            <tr>
+                <td class="edittext">
+                    <input class="edittext" type="text" data-name="zoneId" value="" maxlength="32" size="16">
+                </td>
+                <td class="edittext">
+                    <input type="hidden" data-name="forbidden" value="0">
+                    <input type="checkbox" class="oxidshipping-forbidden" data-name="forbidden" value="1">
+                </td>
+                {% for classValue in shippingClasses %}
+                    <td class="edittext">
+                        <input class="edittext oxidshipping-day" type="text" data-name="[days][{{ classValue }}]" value="" size="6">
+                    </td>
+                {% endfor %}
+                <td class="edittext">
+                    <button type="button" class="oxidshipping-remove-row">{{ translate({ ident: "OXIDSHIPPING_REMOVE_ROW" }) }}</button>
+                </td>
+            </tr>
+        </template>
+
+        <h4>{{ translate({ ident: "OXIDSHIPPING_POSTAL_ENTRIES" }) }}</h4>
+        <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+            <thead>
+                <tr>
+                    <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_COUNTRY" }) }}</td>
+                    <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_POSTAL_CODE" }) }}</td>
+                    <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_ZONE_ID" }) }}</td>
+                    <td class="listheader"></td>
+                </tr>
+            </thead>
+            <tbody data-oxidshipping-rows="postal" data-name-prefix="postalEntries" data-oxidshipping-max="100000">
+                {% for row in tariffDocument.zones.directory.postalEntries|default([]) %}
+                    {% set countryKey = 'postalEntries.' ~ loop.index0 ~ '.country' %}
+                    {% set postalKey = 'postalEntries.' ~ loop.index0 ~ '.postalCode' %}
+                    {% set zoneKey = 'postalEntries.' ~ loop.index0 ~ '.zoneId' %}
+                    <tr>
+                        <td class="edittext">
+                            <select class="edittext" name="postalEntries[{{ loop.index0 }}][country]" data-name="country">
+                                {% for code in servedCountryChoices %}
+                                    <option value="{{ code }}"{% if row.country == code %} selected{% endif %}>{{ code }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if fieldErrors[countryKey] is defined %}
+                                <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors[countryKey]|upper }) }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="edittext">
+                            <input class="edittext" type="text" name="postalEntries[{{ loop.index0 }}][postalCode]" data-name="postalCode" value="{{ row.postalCode }}" maxlength="10" size="10">
+                            {% if fieldErrors[postalKey] is defined %}
+                                <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors[postalKey]|upper }) }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="edittext">
+                            <select class="edittext" name="postalEntries[{{ loop.index0 }}][zoneId]" data-name="zoneId">
+                                {% for zoneId in zoneIds %}
+                                    <option value="{{ zoneId }}"{% if row.zoneId == zoneId %} selected{% endif %}>{{ zoneId }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if fieldErrors[zoneKey] is defined %}
+                                <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors[zoneKey]|upper }) }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="edittext">
+                            <button type="button" class="oxidshipping-remove-row">{{ translate({ ident: "OXIDSHIPPING_REMOVE_ROW" }) }}</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p>
+            <button type="button" class="oxidshipping-add-row" data-oxidshipping-rows="postal" data-oxidshipping-template="oxidshipping-postal-template">{{ translate({ ident: "OXIDSHIPPING_ADD_POSTAL" }) }}</button>
+        </p>
+
+        <template id="oxidshipping-postal-template">
+            <tr>
+                <td class="edittext">
+                    <select class="edittext" data-name="country">
+                        {% for code in servedCountryChoices %}
+                            <option value="{{ code }}">{{ code }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td class="edittext">
+                    <input class="edittext" type="text" data-name="postalCode" value="" maxlength="10" size="10">
+                </td>
+                <td class="edittext">
+                    <select class="edittext" data-name="zoneId"></select>
+                </td>
+                <td class="edittext">
+                    <button type="button" class="oxidshipping-remove-row">{{ translate({ ident: "OXIDSHIPPING_REMOVE_ROW" }) }}</button>
+                </td>
+            </tr>
+        </template>
+
+        <p>
+            <input type="submit" id="oxidshipping-save" class="saveButton" value="{{ translate({ ident: "OXIDSHIPPING_SAVE" }) }}">
+        </p>
+    {% endif %}
+</form>
+
+{% include "bottomitem.html.twig" %}

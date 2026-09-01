@@ -8,12 +8,14 @@ final readonly class ShopQuote
 {
     /**
      * @param list<ShopShipment> $shipments
+     * @param array<int, string> $lineLabels
      */
     public function __construct(
         public ShopQuoteStatus $status,
         public int $totalCents,
         public array $shipments,
         public string $messageLangKey,
+        public array $lineLabels = [],
     ) {
     }
 

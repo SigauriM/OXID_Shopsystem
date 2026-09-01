@@ -1,0 +1,11 @@
+<form name="oxidshipping_tabs" id="oxidshipping_tabs" action="{{ oViewConf.getSelfLink()|raw }}" method="post">
+    {{ oViewConf.getHiddenSid()|raw }}
+    <input type="hidden" name="cl" id="oxidshipping_tab_cl" value="{{ oView.getClassKey() }}">
+</form>
+<script type="text/javascript">
+function oxidshippingChangeTab(cl) {
+    document.getElementById('oxidshipping_tab_cl').value = cl;
+    document.getElementById('oxidshipping_tabs').submit();
+}
+</script>
+{% include "pagetabsnippet.html.twig" with {sEditAction: "oxidshippingChangeTab"} %}

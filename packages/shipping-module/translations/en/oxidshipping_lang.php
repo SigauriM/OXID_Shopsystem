@@ -13,4 +13,10 @@ $aLang = [
     'OXIDSHIPPING_CLASS_SPERRGUT' => 'Bulky goods',
     'OXIDSHIPPING_CLASS_SPEDITION' => 'Freight',
     'OXIDSHIPPING_DAYS' => 'days',
+    'OXIDSHIPPING_BOX_TITLE' => 'Shipping',
+    'OXIDSHIPPING_BOX_PLZ' => 'Postal code',
+    'OXIDSHIPPING_BOX_QTY' => 'Quantity',
+    'OXIDSHIPPING_BOX_CALCULATE' => 'Calculate',
+    'OXIDSHIPPING_BOX_HINT' => 'Please enter a postal code.',
+    'OXIDSHIPPING_TRY_LATER' => 'Please try again later.',
 ];

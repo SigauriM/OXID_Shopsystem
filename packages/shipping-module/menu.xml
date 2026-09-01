@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OX>
+    <OXMENU id="NAVIGATION_ESHOPADMIN">
+        <MAINMENU id="mxshopsett">
+            <SUBMENU id="mxoxidshipping" cl="oxidshipping_rules" rights="malladmin">
+                <TAB id="tbcloxidshipping_rules" cl="oxidshipping_rules" />
+                <TAB id="tbcloxidshipping_zones" cl="oxidshipping_zones" />
+                <TAB id="tbcloxidshipping_rates" cl="oxidshipping_rates" />
+                <TAB id="tbcloxidshipping_surcharges" cl="oxidshipping_surcharges" />
+                <TAB id="tbcloxidshipping_versions" cl="oxidshipping_versions" />
+                <TAB id="tbcloxidshipping_sandbox" cl="oxidshipping_sandbox" />
+            </SUBMENU>
+        </MAINMENU>
+    </OXMENU>
+</OX>

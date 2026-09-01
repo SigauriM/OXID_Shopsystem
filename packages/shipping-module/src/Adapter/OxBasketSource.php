@@ -23,6 +23,39 @@ final class OxBasketSource implements CartSource
     public function lines(): array
     {
         $lines = [];
+        foreach ($this->indexedRows() as $row) {
+            $lines[] = $row['line'];
+        }
+
+        return $lines;
+    }
+
+    public function lineLabels(): array
+    {
+        $labels = [];
+        foreach ($this->indexedRows() as $index => $row) {
+            $labels[$index] = $row['label'];
+        }
+
+        return $labels;
+    }
+
+    public function postalCode(): string
+    {
+        return $this->destination()[0];
+    }
+
+    public function countryIso(): string
+    {
+        return $this->destination()[1];
+    }
+
+    /**
+     * @return array<int, array{line: CartLine, label: string}>
+     */
+    private function indexedRows(): array
+    {
+        $rows = [];
         foreach ($this->basket->getContents() as $item) {
             if (!$item instanceof BasketItem || $item->isBundle()) {
                 continue;
@@ -35,28 +68,22 @@ final class OxBasketSource implements CartSource
 
             $articleNumber = trim((string) $article->oxarticles__oxartnum->value);
             $lineId = $articleNumber !== '' ? $articleNumber : (string) $article->getId();
+            $title = trim((string) $article->oxarticles__oxtitle->value);
 
-            $lines[] = new CartLine(
-                $lineId,
-                (float) $article->oxarticles__oxlength->value,
-                (float) $article->oxarticles__oxwidth->value,
-                (float) $article->oxarticles__oxheight->value,
-                (float) $article->oxarticles__oxweight->value,
-                (float) $item->getAmount(),
-            );
+            $rows[] = [
+                'line' => new CartLine(
+                    $lineId,
+                    (float) $article->oxarticles__oxlength->value,
+                    (float) $article->oxarticles__oxwidth->value,
+                    (float) $article->oxarticles__oxheight->value,
+                    (float) $article->oxarticles__oxweight->value,
+                    (float) $item->getAmount(),
+                ),
+                'label' => self::label($title, $articleNumber, $lineId),
+            ];
         }
 
-        return $lines;
-    }
-
-    public function postalCode(): string
-    {
-        return $this->destination()[0];
-    }
-
-    public function countryIso(): string
-    {
-        return $this->destination()[1];
+        return $rows;
     }
 
     /**
@@ -98,5 +125,17 @@ final class OxBasketSource implements CartSource
         }
 
         return trim((string) $country->oxcountry__oxisoalpha2->value);
+    }
+
+    private static function label(string $title, string $articleNumber, string $fallback): string
+    {
+        if ($title !== '' && $articleNumber !== '') {
+            return $title . ' · ' . $articleNumber;
+        }
+        if ($title !== '') {
+            return $title;
+        }
+
+        return $articleNumber !== '' ? $articleNumber : $fallback;
     }
 }

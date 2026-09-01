@@ -1,0 +1,4 @@
+table_storage:
+  table_name: oxmigrations_oxidshipping
+migrations_paths:
+  'OxidShipping\Module\Migrations': data

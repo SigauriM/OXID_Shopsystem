@@ -40,10 +40,10 @@ final class QuoteFacade
     ) {
     }
 
-    public function quote(CartSource $source): ShopQuote
+    public function quote(CartSource $source, QuoteChannel $channel = QuoteChannel::Basket): ShopQuote
     {
         try {
-            return $this->quoteOrFail($source);
+            return $this->quoteOrFail($source, $channel);
         } catch (TariffLoadFailed) {
             $this->logger->error('Shipping tariff could not be loaded.');
 
@@ -55,7 +55,7 @@ final class QuoteFacade
         }
     }
 
-    private function quoteOrFail(CartSource $source): ShopQuote
+    private function quoteOrFail(CartSource $source, QuoteChannel $channel): ShopQuote
     {
         $postalCode = $source->postalCode();
         $country = $source->countryIso();
@@ -71,7 +71,7 @@ final class QuoteFacade
         }
 
         $config = $this->tariffSource->get();
-        $fingerprint = $this->fingerprint($mapped, $config);
+        $fingerprint = $this->fingerprint($mapped, $config, $channel);
         if ($this->cachedFingerprint === $fingerprint && $this->cachedQuote !== null) {
             return $this->cachedQuote;
         }
@@ -84,15 +84,20 @@ final class QuoteFacade
             $config,
         ));
 
-        $shopQuote = $this->toShopQuote($result);
-        $this->traceLogger->write($shopQuote, $result, TariffDocument::hash($config));
+        $shopQuote = $this->toShopQuote($result, $source->lineLabels());
+        if ($channel === QuoteChannel::Basket) {
+            $this->traceLogger->write($shopQuote, $result, TariffDocument::hash($config), $channel);
+        }
         $this->cachedFingerprint = $fingerprint;
         $this->cachedQuote = $shopQuote;
 
         return $shopQuote;
     }
 
-    private function toShopQuote(QuoteResult $result): ShopQuote
+    /**
+     * @param array<int, string> $lineLabels
+     */
+    private function toShopQuote(QuoteResult $result, array $lineLabels): ShopQuote
     {
         if ($result instanceof ValidationFailed) {
             return $this->invalid();
@@ -118,12 +123,23 @@ final class QuoteFacade
         $shipments = [];
         foreach ($result->shipments as $priced) {
             $shipment = $priced->shipment;
+            $pieces = [];
+            foreach ($shipment->pieces as $item) {
+                $piece = $item->piece;
+                $pieces[] = new ShopPiece(
+                    $piece->lineIndex,
+                    $piece->pieceIndex,
+                    $piece->lineId,
+                    $piece->billableGrams,
+                );
+            }
             $shipments[] = new ShopShipment(
                 $this->classLangKey($shipment->class),
                 $shipment->zoneId,
                 $shipment->indoor,
                 $priced->totalCents,
                 $priced->transitDays,
+                $pieces,
             );
         }
 
@@ -132,10 +148,11 @@ final class QuoteFacade
             $result->totalCents,
             $shipments,
             '',
+            $lineLabels,
         );
     }
 
-    private function fingerprint(MappedCart $mapped, TariffConfig $config): string
+    private function fingerprint(MappedCart $mapped, TariffConfig $config, QuoteChannel $channel): string
     {
         $lines = [];
         foreach ($mapped->lines as $line) {
@@ -151,6 +168,7 @@ final class QuoteFacade
 
         return hash('sha256', json_encode(
             [
+                'channel' => $channel->value,
                 'country' => $mapped->country,
                 'indoor' => self::INDOOR,
                 'lines' => $lines,

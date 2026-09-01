@@ -1,0 +1,143 @@
+{% include "headitem.html.twig" with {title: "tbcloxidshipping_rules"|translate} %}
+
+{% include "@oxidshipping/admin/inc/tariff_tabs.html.twig" %}
+
+{{ script({ include: oViewConf.getModuleUrl('oxidshipping', 'js/tariff-admin.js'), priority: 20, dynamic: __oxid_include_dynamic }) }}
+
+<form name="myedit" id="myedit" action="{{ oViewConf.getSelfLink()|raw }}" method="post">
+    {{ oViewConf.getHiddenSid()|raw }}
+    <input type="hidden" name="cl" value="oxidshipping_rules">
+    <input type="hidden" name="fnc" value="save">
+    <input type="hidden" name="baseHash" value="{{ baseHash }}">
+
+    <h3>{{ translate({ ident: "tbcloxidshipping_rules" }) }}</h3>
+
+    {% if saveKind == 'saved' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_SAVED" }) }}</div>
+        {% if suggestedVersion %}
+            <div class="info">{{ translate({ ident: "OXIDSHIPPING_VERSION_SUGGEST" }) }} {{ suggestedVersion }}</div>
+        {% endif %}
+    {% elseif saveKind == 'renamed' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_RENAMED" }) }}</div>
+    {% elseif saveKind == 'unchanged' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_UNCHANGED" }) }}</div>
+    {% elseif saveKind == 'conflict' %}
+        <div class="errorbox">{{ translate({ ident: "OXIDSHIPPING_SAVE_CONFLICT" }) }}</div>
+    {% endif %}
+
+    {% if kernelMessage %}
+        <div class="errorbox">
+            {{ translate({ ident: "OXIDSHIPPING_KERNEL_REJECTED" }) }}
+            <div>{{ kernelMessage }}</div>
+        </div>
+    {% endif %}
+
+    {% if not tariffDocument %}
+        <div class="errorbox">{{ translate({ ident: "OXIDSHIPPING_NO_ACTIVE" }) }}</div>
+    {% else %}
+        {% set fieldErrors = fieldErrors|default({}) %}
+        {% set thresholdClasses = thresholdClasses|default(['sperrgut', 'spedition']) %}
+        {% set tables = [
+            { key: 'girth', ident: 'OXIDSHIPPING_GIRTH', rows: tariffDocument.classification.girth|default([]) },
+            { key: 'maxLength', ident: 'OXIDSHIPPING_MAX_LENGTH', rows: tariffDocument.classification.maxLength|default([]) },
+            { key: 'billableWeight', ident: 'OXIDSHIPPING_BILLABLE_WEIGHT', rows: tariffDocument.classification.billableWeight|default([]) }
+        ] %}
+
+        <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+            <tr>
+                <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_VERSION" }) }}</td>
+                <td class="edittext">
+                    <input class="edittext" type="text" name="version" value="{{ tariffDocument.version }}" maxlength="64" size="40">
+                    {% if fieldErrors.version is defined %}
+                        <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.version|upper }) }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_DIM_FACTOR" }) }}</td>
+                <td class="edittext">
+                    <input class="edittext" type="text" name="dimFactorCmKg" value="{{ tariffDocument.dimFactorCmKg }}" size="10">
+                    {% if fieldErrors.dimFactorCmKg is defined %}
+                        <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.dimFactorCmKg|upper }) }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_ORDER_WEIGHT" }) }}</td>
+                <td class="edittext">
+                    <input class="edittext" type="text" name="orderWeightSpeditionGrams" value="{{ tariffDocument.orderWeightSpeditionGrams }}" size="10">
+                    {% if fieldErrors.orderWeightSpeditionGrams is defined %}
+                        <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.orderWeightSpeditionGrams|upper }) }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        {% for table in tables %}
+            <h4>{{ translate({ ident: table.ident }) }}</h4>
+            <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+                <thead>
+                    <tr>
+                        <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_ABOVE" }) }}</td>
+                        <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_CLASS" }) }}</td>
+                        <td class="listheader"></td>
+                    </tr>
+                </thead>
+                <tbody data-oxidshipping-floors="{{ table.key }}" data-oxidshipping-max="16">
+                    {% for row in table.rows %}
+                        {% set aboveKey = 'classification.' ~ table.key ~ '.' ~ loop.index0 ~ '.above' %}
+                        {% set classKey = 'classification.' ~ table.key ~ '.' ~ loop.index0 ~ '.class' %}
+                        <tr>
+                            <td class="edittext">
+                                <input class="edittext" type="text" name="classification[{{ table.key }}][{{ loop.index0 }}][above]" value="{{ row.above }}" size="12">
+                                {% if fieldErrors[aboveKey] is defined %}
+                                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors[aboveKey]|upper }) }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="edittext">
+                                <select class="edittext" name="classification[{{ table.key }}][{{ loop.index0 }}][class]">
+                                    {% for classValue in thresholdClasses %}
+                                        <option value="{{ classValue }}"{% if row.class == classValue %} selected{% endif %}>{{ translate({ ident: "OXIDSHIPPING_CLASS_" ~ classValue|upper }) }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if fieldErrors[classKey] is defined %}
+                                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors[classKey]|upper }) }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="edittext">
+                                <button type="button" class="oxidshipping-remove-row">{{ translate({ ident: "OXIDSHIPPING_REMOVE_ROW" }) }}</button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p>
+                <button type="button" class="oxidshipping-add-row" data-oxidshipping-table="{{ table.key }}">{{ translate({ ident: "OXIDSHIPPING_ADD_ROW" }) }}</button>
+            </p>
+        {% endfor %}
+
+        <template id="oxidshipping-floor-template">
+            <tr>
+                <td class="edittext">
+                    <input class="edittext" type="text" data-name="above" value="" size="12">
+                </td>
+                <td class="edittext">
+                    <select class="edittext" data-name="class">
+                        {% for classValue in thresholdClasses %}
+                            <option value="{{ classValue }}">{{ translate({ ident: "OXIDSHIPPING_CLASS_" ~ classValue|upper }) }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td class="edittext">
+                    <button type="button" class="oxidshipping-remove-row">{{ translate({ ident: "OXIDSHIPPING_REMOVE_ROW" }) }}</button>
+                </td>
+            </tr>
+        </template>
+
+        <p>
+            <input type="submit" id="oxidshipping-save" class="saveButton" value="{{ translate({ ident: "OXIDSHIPPING_SAVE" }) }}">
+        </p>
+    {% endif %}
+</form>
+
+{% include "bottomitem.html.twig" %}

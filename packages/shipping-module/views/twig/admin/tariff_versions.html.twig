@@ -1,0 +1,60 @@
+{% include "headitem.html.twig" with {title: "tbcloxidshipping_versions"|translate} %}
+
+{% include "@oxidshipping/admin/inc/tariff_tabs.html.twig" %}
+
+<h3>{{ translate({ ident: "tbcloxidshipping_versions" }) }}</h3>
+
+{% if kernelMessage %}
+    <div class="errorbox">
+        {{ translate({ ident: "OXIDSHIPPING_KERNEL_REJECTED" }) }}
+        <div>{{ kernelMessage }}</div>
+    </div>
+{% endif %}
+
+<table cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+        <td class="listheader first">{{ translate({ ident: "OXIDSHIPPING_VERSION" }) }}</td>
+        <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_HASH" }) }}</td>
+        <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_AUTHOR" }) }}</td>
+        <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_TIMESTAMP" }) }}</td>
+        <td class="listheader"></td>
+    </tr>
+    {% for version in tariffVersions|default([]) %}
+        {% set listclass = loop.index0 is even ? 'listitem' : 'listitem2' %}
+        <tr>
+            <td class="{{ listclass }}">
+                {{ version.version }}
+                {% if version.active %}
+                    ({{ translate({ ident: "OXIDSHIPPING_ACTIVE" }) }})
+                {% endif %}
+            </td>
+            <td class="{{ listclass }}">{{ version.hash|slice(0, 12) }}</td>
+            <td class="{{ listclass }}">
+                {% if version.authorId %}
+                    {{ version.authorId }}
+                {% else %}
+                    {{ translate({ ident: "OXIDSHIPPING_SYSTEM" }) }}
+                {% endif %}
+            </td>
+            <td class="{{ listclass }}">{{ version.timestamp }}</td>
+            <td class="{{ listclass }}">
+                {% if not version.active %}
+                    <form action="{{ oViewConf.getSelfLink()|raw }}" method="post">
+                        {{ oViewConf.getHiddenSid()|raw }}
+                        <input type="hidden" name="cl" value="oxidshipping_versions">
+                        <input type="hidden" name="fnc" value="activate">
+                        <input type="hidden" name="oxid" value="{{ version.id }}">
+                        <input type="submit" class="saveButton" value="{{ translate({ ident: "OXIDSHIPPING_ACTIVATE" }) }}">
+                    </form>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="{{ listclass }}" colspan="5">
+                <textarea class="edittext" rows="8" cols="90" readonly>{{ version.payload }}</textarea>
+            </td>
+        </tr>
+    {% endfor %}
+</table>
+
+{% include "bottomitem.html.twig" %}

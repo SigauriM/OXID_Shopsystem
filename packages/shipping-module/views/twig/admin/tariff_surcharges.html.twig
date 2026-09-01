@@ -1,0 +1,86 @@
+{% include "headitem.html.twig" with {title: "tbcloxidshipping_surcharges"|translate} %}
+
+{% include "@oxidshipping/admin/inc/tariff_tabs.html.twig" %}
+
+{{ script({ include: "js/libs/jquery.min.js", dynamic: __oxid_include_dynamic }) }}
+{{ script({ include: "js/libs/jquery-ui.min.js", dynamic: __oxid_include_dynamic }) }}
+{{ script({ include: oViewConf.getModuleUrl('oxidshipping', 'js/tariff-admin.js'), priority: 20, dynamic: __oxid_include_dynamic }) }}
+
+<form name="myedit" id="myedit" action="{{ oViewConf.getSelfLink()|raw }}" method="post">
+    {{ oViewConf.getHiddenSid()|raw }}
+    <input type="hidden" name="cl" value="oxidshipping_surcharges">
+    <input type="hidden" name="fnc" value="save">
+    <input type="hidden" name="baseHash" value="{{ baseHash }}">
+    <input type="hidden" name="surchargeOrder" id="oxidshipping-surcharge-order" value="{{ surchargeOrder }}">
+
+    <h3>{{ translate({ ident: "tbcloxidshipping_surcharges" }) }}</h3>
+
+    {% if saveKind == 'saved' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_SAVED" }) }}</div>
+        {% if suggestedVersion %}
+            <div class="info">{{ translate({ ident: "OXIDSHIPPING_VERSION_SUGGEST" }) }} {{ suggestedVersion }}</div>
+        {% endif %}
+    {% elseif saveKind == 'renamed' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_RENAMED" }) }}</div>
+    {% elseif saveKind == 'unchanged' %}
+        <div class="info">{{ translate({ ident: "OXIDSHIPPING_SAVE_UNCHANGED" }) }}</div>
+    {% elseif saveKind == 'conflict' %}
+        <div class="errorbox">{{ translate({ ident: "OXIDSHIPPING_SAVE_CONFLICT" }) }}</div>
+    {% endif %}
+
+    {% if kernelMessage %}
+        <div class="errorbox">
+            {{ translate({ ident: "OXIDSHIPPING_KERNEL_REJECTED" }) }}
+            <div>{{ kernelMessage }}</div>
+        </div>
+    {% endif %}
+
+    {% if not tariffDocument %}
+        <div class="errorbox">{{ translate({ ident: "OXIDSHIPPING_NO_ACTIVE" }) }}</div>
+    {% else %}
+        {% set fieldErrors = fieldErrors|default({}) %}
+
+        <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+            <tr>
+                <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_VERSION" }) }}</td>
+                <td class="edittext">
+                    <input class="edittext" type="text" name="version" value="{{ tariffDocument.version }}" maxlength="64" size="40">
+                    {% if fieldErrors.version is defined %}
+                        <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.version|upper }) }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <ul class="sortable" id="oxidshipping-surcharge-list">
+            {% for row in surchargeRows %}
+                {% set centsKey = row.id ~ '.cents' %}
+                <li data-surcharge-id="{{ row.id }}">
+                    <span>{{ translate({ ident: "OXIDSHIPPING_SURCHARGE_" ~ row.id|upper }) }}</span>
+                    <span>{{ translate({ ident: "OXIDSHIPPING_PRIORITY" }) }}: {{ row.priority }}</span>
+                    <label>
+                        {{ translate({ ident: "OXIDSHIPPING_CENTS" }) }}
+                        <input class="edittext" type="text" name="{{ row.id }}[cents]" value="{{ row.cents }}" size="8">
+                    </label>
+                    {% if fieldErrors[centsKey] is defined %}
+                        <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors[centsKey]|upper }) }}</div>
+                    {% endif %}
+                    {% if row.id == 'island' %}
+                        <div>
+                            {{ translate({ ident: "OXIDSHIPPING_ISLAND_ZONES" }) }}:
+                            {% for zoneId in row.zoneIds %}
+                                {{ zoneId }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+
+        <p>
+            <input type="submit" id="oxidshipping-save" class="saveButton" value="{{ translate({ ident: "OXIDSHIPPING_SAVE" }) }}" disabled>
+        </p>
+    {% endif %}
+</form>
+
+{% include "bottomitem.html.twig" %}

@@ -1,0 +1,220 @@
+{% include "headitem.html.twig" with {title: "tbcloxidshipping_sandbox"|translate} %}
+
+{% include "@oxidshipping/admin/inc/tariff_tabs.html.twig" %}
+
+{% set sandbox = sandbox|default({}) %}
+{% set input = sandbox.input|default({}) %}
+{% set fieldErrors = sandbox.fieldErrors|default({}) %}
+
+<form name="myedit" id="myedit" action="{{ oViewConf.getSelfLink()|raw }}" method="post">
+    {{ oViewConf.getHiddenSid()|raw }}
+    <input type="hidden" name="cl" value="oxidshipping_sandbox">
+    <input type="hidden" name="fnc" value="calculate">
+
+    <h3>{{ translate({ ident: "tbcloxidshipping_sandbox" }) }}</h3>
+
+    {% if sandbox.kind == 'unavailable' %}
+        <div class="errorbox">{{ translate({ ident: "OXIDSHIPPING_NO_ACTIVE" }) }}</div>
+    {% endif %}
+
+    <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_LENGTH_MM" }) }}</td>
+            <td class="edittext">
+                <input class="edittext" type="text" name="lengthMm" value="{{ input.lengthMm|default('') }}" size="10">
+                {% if fieldErrors.lengthMm is defined %}
+                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.lengthMm|upper }) }}</div>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_WIDTH_MM" }) }}</td>
+            <td class="edittext">
+                <input class="edittext" type="text" name="widthMm" value="{{ input.widthMm|default('') }}" size="10">
+                {% if fieldErrors.widthMm is defined %}
+                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.widthMm|upper }) }}</div>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_HEIGHT_MM" }) }}</td>
+            <td class="edittext">
+                <input class="edittext" type="text" name="heightMm" value="{{ input.heightMm|default('') }}" size="10">
+                {% if fieldErrors.heightMm is defined %}
+                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.heightMm|upper }) }}</div>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_WEIGHT_G" }) }}</td>
+            <td class="edittext">
+                <input class="edittext" type="text" name="weightGrams" value="{{ input.weightGrams|default('') }}" size="10">
+                {% if fieldErrors.weightGrams is defined %}
+                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.weightGrams|upper }) }}</div>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_QUANTITY" }) }}</td>
+            <td class="edittext">
+                <input class="edittext" type="text" name="quantity" value="{{ input.quantity|default('1') }}" size="6">
+                {% if fieldErrors.quantity is defined %}
+                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.quantity|upper }) }}</div>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_POSTAL_CODE" }) }}</td>
+            <td class="edittext">
+                <input class="edittext" type="text" name="postalCode" value="{{ input.postalCode|default('') }}" maxlength="10" size="10">
+                {% if fieldErrors.postalCode is defined %}
+                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.postalCode|upper }) }}</div>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_COUNTRY" }) }}</td>
+            <td class="edittext">
+                <input class="edittext" type="text" name="country" value="{{ input.country|default('DE') }}" maxlength="2" size="4">
+                {% if fieldErrors.country is defined %}
+                    <div class="error">{{ translate({ ident: "OXIDSHIPPING_FIELD_" ~ fieldErrors.country|upper }) }}</div>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_INDOOR" }) }}</td>
+            <td class="edittext">
+                <input type="hidden" name="indoor" value="0">
+                <input type="checkbox" name="indoor" value="1"{% if input.indoor|default('0') == '1' %} checked{% endif %}>
+            </td>
+        </tr>
+    </table>
+
+    <p>
+        <input type="submit" class="saveButton" value="{{ translate({ ident: "OXIDSHIPPING_CALCULATE" }) }}">
+    </p>
+</form>
+
+{% if sandbox.kind == 'validation' %}
+    <h4>{{ translate({ ident: "OXIDSHIPPING_SANDBOX_VALIDATION" }) }}</h4>
+    <ul>
+        {% for error in sandbox.validationErrors %}
+            <li>
+                {{ error.field }}:
+                {{ translate({ ident: "OXIDSHIPPING_ERR_" ~ error.code|upper }) }}
+                ({{ error.code }})
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+{% if sandbox.kind == 'quoted' %}
+    <h4>{{ translate({ ident: "OXIDSHIPPING_SANDBOX_INPUT" }) }}</h4>
+    <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+        <tr><td class="edittext">{{ translate({ ident: "OXIDSHIPPING_LENGTH_MM" }) }}</td><td class="edittext">{{ input.lengthMm }}</td></tr>
+        <tr><td class="edittext">{{ translate({ ident: "OXIDSHIPPING_WIDTH_MM" }) }}</td><td class="edittext">{{ input.widthMm }}</td></tr>
+        <tr><td class="edittext">{{ translate({ ident: "OXIDSHIPPING_HEIGHT_MM" }) }}</td><td class="edittext">{{ input.heightMm }}</td></tr>
+        <tr><td class="edittext">{{ translate({ ident: "OXIDSHIPPING_WEIGHT_G" }) }}</td><td class="edittext">{{ input.weightGrams }}</td></tr>
+        <tr><td class="edittext">{{ translate({ ident: "OXIDSHIPPING_QUANTITY" }) }}</td><td class="edittext">{{ input.quantity }}</td></tr>
+        <tr><td class="edittext">{{ translate({ ident: "OXIDSHIPPING_POSTAL_CODE" }) }}</td><td class="edittext">{{ input.postalCode }}</td></tr>
+        <tr><td class="edittext">{{ translate({ ident: "OXIDSHIPPING_COUNTRY" }) }}</td><td class="edittext">{{ input.country }}</td></tr>
+        <tr><td class="edittext">{{ translate({ ident: "OXIDSHIPPING_INDOOR" }) }}</td><td class="edittext">{% if input.indoor == '1' %}1{% else %}0{% endif %}</td></tr>
+    </table>
+
+    <h4>{{ translate({ ident: "OXIDSHIPPING_SANDBOX_DESTINATION" }) }}</h4>
+    {% if sandbox.destination.type == 'known' %}
+        <p>{{ sandbox.destination.zoneId }}</p>
+    {% else %}
+        <p>{{ translate({ ident: "OXIDSHIPPING_REASON_" ~ sandbox.destination.reason|upper }) }} ({{ sandbox.destination.reason }})</p>
+    {% endif %}
+
+    <h4>{{ translate({ ident: "OXIDSHIPPING_SANDBOX_PIECES" }) }}</h4>
+    <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+        <thead>
+            <tr>
+                <td class="listheader">L</td>
+                <td class="listheader">W</td>
+                <td class="listheader">H</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_GIRTH" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_ACTUAL_G" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_VOLUMETRIC_G" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_BILLABLE_G" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_CLASS" }) }}</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for piece in sandbox.pieces %}
+                <tr>
+                    <td class="edittext">{{ piece.lengthMm }}</td>
+                    <td class="edittext">{{ piece.widthMm }}</td>
+                    <td class="edittext">{{ piece.heightMm }}</td>
+                    <td class="edittext">{{ piece.girthMm }}</td>
+                    <td class="edittext">{{ piece.actualGrams }}</td>
+                    <td class="edittext">{{ piece.volumetricGrams }}</td>
+                    <td class="edittext">{{ piece.billableGrams }}</td>
+                    <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_CLASS_" ~ piece.class|upper }) }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4>{{ translate({ ident: "OXIDSHIPPING_SANDBOX_SHIPMENTS" }) }}</h4>
+    <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+        <thead>
+            <tr>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_CLASS" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_ZONE_ID" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_INDOOR" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_PIECE_COUNT" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_BASE" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_CENTS" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_DAYS" }) }}</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for shipment in sandbox.shipments %}
+                <tr>
+                    <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_CLASS_" ~ shipment.class|upper }) }}</td>
+                    <td class="edittext">{{ shipment.zoneId }}</td>
+                    <td class="edittext">{% if shipment.indoor %}1{% else %}0{% endif %}</td>
+                    <td class="edittext">{{ shipment.pieceCount }}</td>
+                    <td class="edittext">{{ shipment.baseCents }}</td>
+                    <td class="edittext">{{ shipment.totalCents }}</td>
+                    <td class="edittext">{{ shipment.transitDays }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4>{{ translate({ ident: "OXIDSHIPPING_SANDBOX_TRACE" }) }}</h4>
+    <table cellspacing="0" cellpadding="0" border="0" class="edittext">
+        <thead>
+            <tr>
+                <td class="listheader">ruleId</td>
+                <td class="listheader">stage</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_CENTS" }) }}</td>
+                <td class="listheader">{{ translate({ ident: "OXIDSHIPPING_SANDBOX_EXPLANATION" }) }}</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in sandbox.trace %}
+                <tr>
+                    <td class="edittext">{{ translate({ ident: "OXIDSHIPPING_RULE_" ~ line.ruleId|upper }) }} ({{ line.ruleId }})</td>
+                    <td class="edittext">{{ line.stage }}</td>
+                    <td class="edittext">{{ line.deltaCents }}</td>
+                    <td class="edittext">{{ line.explanation }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4>{{ translate({ ident: "OXIDSHIPPING_SANDBOX_TOTAL" }) }}</h4>
+    <p>{{ sandbox.totalCents }} ¢</p>
+    <p>{{ translate({ ident: "OXIDSHIPPING_VERSION" }) }}: {{ sandbox.configVersion }}</p>
+    <p>{{ translate({ ident: "OXIDSHIPPING_HASH" }) }}: {{ sandbox.configHash }}</p>
+    <p>
+        <textarea class="edittext" rows="12" cols="90" readonly>{{ sandbox.quoteJson }}</textarea>
+    </p>
+{% endif %}
+
+{% include "bottomitem.html.twig" %}

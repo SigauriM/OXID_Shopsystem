@@ -33,4 +33,14 @@ final class FakeCartSource implements CartSource
     {
         return $this->countryIso;
     }
+
+    public function lineLabels(): array
+    {
+        $labels = [];
+        foreach ($this->lines as $index => $line) {
+            $labels[$index] = $line->articleNumber;
+        }
+
+        return $labels;
+    }
 }
