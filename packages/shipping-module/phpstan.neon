@@ -1,0 +1,10 @@
+parameters:
+    level: 6
+    phpVersion: 80200
+    bootstrapFiles:
+        - ../../vendor/autoload.php
+    paths:
+        - src/Logging
+        - src/Mapping
+        - src/Quote
+        - src/Tariff

@@ -1,5 +1,27 @@
 services:
+  _defaults:
+    autowire: true
+
+  OxidShipping\Module\:
+    resource: 'src/'
+    exclude:
+      - 'src/Extension/'
+      - 'src/Adapter/'
+      - 'src/Mapping/CartLine.php'
+      - 'src/Mapping/CartSource.php'
+      - 'src/Mapping/MappedCart.php'
+      - 'src/Mapping/MappingFailed.php'
+      - 'src/Quote/ShopQuote.php'
+      - 'src/Quote/ShopQuoteStatus.php'
+      - 'src/Quote/ShopShipment.php'
+      - 'src/Tariff/TariffLoadFailed.php'
+
   OxidShipping\Engine\QuoteEngine:
     class: OxidShipping\Engine\QuoteEngine
+    autowire: true
+    public: true
+
+  OxidShipping\Module\Quote\QuoteFacade:
+    class: OxidShipping\Module\Quote\QuoteFacade
     autowire: true
     public: true

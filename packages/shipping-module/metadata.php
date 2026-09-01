@@ -20,7 +20,10 @@ $aModule = [
     ],
     'version' => '1.0.0',
     'author' => 'OXID Shopsystem',
-    'extend' => [],
+    'extend' => [
+        \OxidEsales\Eshop\Application\Model\Basket::class => \OxidShipping\Module\Extension\Basket::class,
+        \OxidEsales\Eshop\Application\Model\Order::class => \OxidShipping\Module\Extension\Order::class,
+    ],
     'events' => [
         'onActivate' => \OxidShipping\Module\ModuleEvents::class . '::onActivate',
         'onDeactivate' => \OxidShipping\Module\ModuleEvents::class . '::onDeactivate',

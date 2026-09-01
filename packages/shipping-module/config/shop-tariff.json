@@ -1,0 +1,211 @@
+{
+    "classification": {
+        "billableWeight": [
+            {
+                "above": 20000,
+                "class": "spedition"
+            }
+        ],
+        "girth": [
+            {
+                "above": 3000,
+                "class": "sperrgut"
+            },
+            {
+                "above": 3600,
+                "class": "spedition"
+            }
+        ],
+        "maxLength": [
+            {
+                "above": 2000,
+                "class": "sperrgut"
+            },
+            {
+                "above": 4000,
+                "class": "spedition"
+            }
+        ]
+    },
+    "dimFactorCmKg": 5000,
+    "orderWeightSpeditionGrams": 40000,
+    "rates": {
+        "base": {
+            "paket": [
+                {
+                    "cents": 400,
+                    "upTo": 1000
+                },
+                {
+                    "cents": 600,
+                    "upTo": 20000
+                },
+                {
+                    "cents": 900,
+                    "upTo": 3375000000
+                }
+            ],
+            "spedition": [
+                {
+                    "cents": 2800,
+                    "upTo": 2000
+                },
+                {
+                    "cents": 3000,
+                    "upTo": 20000
+                },
+                {
+                    "cents": 4000,
+                    "upTo": 40000
+                },
+                {
+                    "cents": 6000,
+                    "upTo": 3375000000
+                }
+            ],
+            "sperrgut": [
+                {
+                    "cents": 1500,
+                    "upTo": 20000
+                },
+                {
+                    "cents": 2000,
+                    "upTo": 3375000000
+                }
+            ]
+        },
+        "surcharges": {
+            "indoor": {
+                "cents": 1500,
+                "priority": 20
+            },
+            "island": {
+                "cents": 800,
+                "priority": 10,
+                "zoneIds": [
+                    "de-island"
+                ]
+            }
+        },
+        "transit": [
+            {
+                "class": "paket",
+                "days": 2,
+                "zoneId": "at-w"
+            },
+            {
+                "class": "paket",
+                "days": 2,
+                "zoneId": "de-01"
+            },
+            {
+                "class": "paket",
+                "days": 2,
+                "zoneId": "de-hh"
+            },
+            {
+                "class": "paket",
+                "days": 4,
+                "zoneId": "de-island"
+            },
+            {
+                "class": "sperrgut",
+                "days": 3,
+                "zoneId": "at-w"
+            },
+            {
+                "class": "sperrgut",
+                "days": 3,
+                "zoneId": "de-01"
+            },
+            {
+                "class": "sperrgut",
+                "days": 3,
+                "zoneId": "de-hh"
+            },
+            {
+                "class": "sperrgut",
+                "days": 6,
+                "zoneId": "de-island"
+            },
+            {
+                "class": "spedition",
+                "days": 5,
+                "zoneId": "at-w"
+            },
+            {
+                "class": "spedition",
+                "days": 5,
+                "zoneId": "de-01"
+            },
+            {
+                "class": "spedition",
+                "days": 5,
+                "zoneId": "de-hh"
+            },
+            {
+                "class": "spedition",
+                "days": 7,
+                "zoneId": "de-island"
+            }
+        ]
+    },
+    "zones": {
+        "directory": {
+            "definitions": [
+                {
+                    "forbidden": false,
+                    "zoneId": "at-w"
+                },
+                {
+                    "forbidden": false,
+                    "zoneId": "de-01"
+                },
+                {
+                    "forbidden": true,
+                    "zoneId": "de-forbidden"
+                },
+                {
+                    "forbidden": false,
+                    "zoneId": "de-hh"
+                },
+                {
+                    "forbidden": false,
+                    "zoneId": "de-island"
+                }
+            ],
+            "postalEntries": [
+                {
+                    "country": "AT",
+                    "postalCode": "1010",
+                    "zoneId": "at-w"
+                },
+                {
+                    "country": "DE",
+                    "postalCode": "01067",
+                    "zoneId": "de-01"
+                },
+                {
+                    "country": "DE",
+                    "postalCode": "18565",
+                    "zoneId": "de-forbidden"
+                },
+                {
+                    "country": "DE",
+                    "postalCode": "20095",
+                    "zoneId": "de-hh"
+                },
+                {
+                    "country": "DE",
+                    "postalCode": "27498",
+                    "zoneId": "de-island"
+                }
+            ]
+        },
+        "servedCountries": [
+            "AT",
+            "DE"
+        ]
+    },
+    "version": "shop-2026-test"
+}
