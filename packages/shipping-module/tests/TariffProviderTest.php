@@ -14,8 +14,6 @@ use OxidShipping\Engine\Tests\Support\TestConfig;
 use OxidShipping\Module\Tariff\TariffProvider;
 use PHPUnit\Framework\TestCase;
 
-require_once dirname(__DIR__, 2) . '/shipping-engine/tests/Support/TestConfig.php';
-
 final class TariffProviderTest extends TestCase
 {
     public function testProviderReturnsTariffConfigAndGoldenQuoteIs6600Cents(): void

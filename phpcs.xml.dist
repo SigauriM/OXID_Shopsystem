@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<ruleset name="OxidShipping">
+    <description>PSR-12 for the shipping engine and module. Shop core, views, and vendor stay out.</description>
+
+    <file>packages/shipping-engine/src</file>
+    <file>packages/shipping-engine/tests</file>
+    <file>packages/shipping-module/src</file>
+    <file>packages/shipping-module/tests</file>
+
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <arg name="parallel" value="8"/>
+    <arg name="extensions" value="php"/>
+    <arg value="p"/>
+
+    <rule ref="PSR12"/>
+
+    <!-- OXID widgets must keep $_aComponentNames; renaming it drops the widget from the shop component list. -->
+    <rule ref="PSR2.Classes.PropertyDeclaration.Underscore">
+        <exclude-pattern>packages/shipping-module/src/Application/Component/Widget/ShippingBox.php</exclude-pattern>
+    </rule>
+</ruleset>

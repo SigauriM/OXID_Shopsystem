@@ -54,6 +54,9 @@ jobs:
         working-directory: packages/shipping-engine
         run: vendor/bin/phpstan analyse
 
+      - name: PHP_CodeSniffer
+        run: packages/shipping-engine/vendor/bin/phpcs
+
   module:
     name: module (PHP 8.3)
     runs-on: ubuntu-latest
@@ -88,3 +91,6 @@ jobs:
 
       - name: PHPStan
         run: packages/shipping-engine/vendor/bin/phpstan analyse -c packages/shipping-module/phpstan.neon
+
+      - name: PHP_CodeSniffer
+        run: packages/shipping-engine/vendor/bin/phpcs

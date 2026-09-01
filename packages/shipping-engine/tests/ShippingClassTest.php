@@ -19,7 +19,7 @@ final class ShippingClassTest extends TestCase
         $this->assertSame(['Paket', 'Sperrgut', 'Spedition'], $names);
     }
 
-        public function testBackingValuesAreStableWireIds(): void
+    public function testBackingValuesAreStableWireIds(): void
     {
         $values = array_map(
             static fn (ShippingClass $case): string => $case->value,

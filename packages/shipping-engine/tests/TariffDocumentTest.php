@@ -366,8 +366,14 @@ final class TariffDocumentTest extends TestCase
     {
         $a = TestConfig::tariff();
         $b = TestConfig::tariff(dimFactorCmKg: 1000);
-        $this->assertSame(TariffDocument::hash($a), TariffDocument::hash(TariffDocument::fromArray(TariffDocument::document($a))));
-        $this->assertSame(TariffDocument::hash($b), TariffDocument::hash(TariffDocument::fromArray(TariffDocument::document($b))));
+        $this->assertSame(
+            TariffDocument::hash($a),
+            TariffDocument::hash(TariffDocument::fromArray(TariffDocument::document($a))),
+        );
+        $this->assertSame(
+            TariffDocument::hash($b),
+            TariffDocument::hash(TariffDocument::fromArray(TariffDocument::document($b))),
+        );
         $this->assertSame('test-2026', TariffDocument::fromArray(TariffDocument::document($a))->version);
     }
 

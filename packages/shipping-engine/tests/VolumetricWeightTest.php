@@ -57,9 +57,10 @@ final class VolumetricWeightTest extends TestCase
         $this->assertSame(667, $grams % 1000);
     }
 
-    public function testCeilStepsAtFiveThousandAndFiveThousandOneCubicMillimetres(): void
+    public function testCeilStepsAt5000And5001CubicMillimetres(): void
     {
-        // Sides chosen so L×W×H is 5000 or 5001 mm³; that is the smallest ceil step (remainder 1000), not a real parcel.
+        // Sides chosen so L×W×H is 5000 or 5001 mm³;
+        // that is the smallest ceil step (remainder 1000), not a real parcel.
         $this->assertSame(1, VolumetricWeight::grams(
             Dimensions::canonical(5, 4, 250),
             VolumetricDivisor::fromDimFactorCmKg(5000),

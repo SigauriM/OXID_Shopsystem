@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require dirname(__DIR__) . '/../../vendor/autoload.php';
+require_once dirname(__DIR__, 2) . '/shipping-engine/tests/Support/TestConfig.php';
 
 spl_autoload_register(static function (string $class): void {
     $prefix = 'OxidShipping\\Module\\Tests\\Support\\';

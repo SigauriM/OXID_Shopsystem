@@ -123,7 +123,11 @@ final readonly class Quote implements QuoteResult
             $shipmentKeys = [];
             foreach ($shipments as $priced) {
                 $shipment = $priced->shipment;
-                $shipmentKey = $shipment->class->value . "\0" . $shipment->zoneId . "\0" . ($shipment->indoor ? '1' : '0');
+                $shipmentKey = $shipment->class->value
+                    . "\0"
+                    . $shipment->zoneId
+                    . "\0"
+                    . ($shipment->indoor ? '1' : '0');
                 if (isset($shipmentKeys[$shipmentKey])) {
                     throw new \InvalidArgumentException('Duplicate shipment key.');
                 }
@@ -173,7 +177,9 @@ final readonly class Quote implements QuoteResult
         $sortedRejections = $rejections;
         usort(
             $sortedRejections,
-            static fn (PieceRejection $a, PieceRejection $b): int => [$a->lineIndex, $a->pieceIndex] <=> [$b->lineIndex, $b->pieceIndex],
+            static function (PieceRejection $a, PieceRejection $b): int {
+                return [$a->lineIndex, $a->pieceIndex] <=> [$b->lineIndex, $b->pieceIndex];
+            },
         );
 
         $sortedClassified = $classified;
