@@ -1,9 +1,6 @@
 .env
 /vendor/
-/source/tmp/
-/source/log/
-/source/bin/log.txt
 /var/
-/source/config.inc.php
-/source/Setup/
+/source/*
+!/source/robots.txt
 .phpunit.cache
