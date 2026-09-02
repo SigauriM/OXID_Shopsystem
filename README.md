@@ -1,6 +1,6 @@
 # Versandberechnung für Leitern und Gerüst
 
-[![CI](https://github.com/SigauriM/OXID_Shopsystem/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SigauriM/OXID_Shopsystem/actions/workflows/ci.yml?query=branch%3Amain)
+[![CI](https://github.com/SigauriM/oxid-oversize-shipping/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SigauriM/oxid-oversize-shipping/actions/workflows/ci.yml?query=branch%3Amain)
 ![PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3-777bb4)
 ![PHPStan](https://img.shields.io/badge/PHPStan-level%206-brightgreen)
 ![OXID](https://img.shields.io/badge/OXID-7.5%20CE-005ca9)
