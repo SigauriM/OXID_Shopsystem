@@ -1,6 +1,6 @@
 {
     "name": "oxid-shipping/module",
-    "description": "OXID shipping module (stage 2 skeleton)",
+    "description": "OXID 7 module: shipping by dimensions and postcode; one order can split into parcel and freight",
     "type": "oxideshop-module",
     "license": "proprietary",
     "require": {

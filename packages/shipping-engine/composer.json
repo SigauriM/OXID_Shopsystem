@@ -1,6 +1,6 @@
 {
     "name": "oxid-shipping/engine",
-    "description": "Shipping calculation engine (stage 1 core)",
+    "description": "I/O-free shipping cost engine: classifies parcel, bulky goods and freight by length, girth and weight, then prices each shipment",
     "type": "library",
     "license": "proprietary",
     "require": {
