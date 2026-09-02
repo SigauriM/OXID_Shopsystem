@@ -41,8 +41,7 @@ Summe        66,00 €
 
 Ein Auftrag, zwei Sendungen, eine Summe im Warenkorb. Die Schwellen oben sind eine **Testfixtur**; produktive Werte kommen über die Tarifverwaltung.
 
-<!-- Screenshot ergänzen und die folgende Zeile einkommentieren: -->
-<!-- ![Warenkorb: Paket + Spedition](docs/img/basket-split.png) -->
+![Warenkorb: Paket 6,00 € plus Spedition 60,00 €, zusammen 66,00 € Versandkosten](docs/img/basket-split.png)
 
 ## Warum so gebaut
 
